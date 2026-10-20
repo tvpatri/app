@@ -78,23 +78,23 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F7F4] flex flex-col text-[#292A30] font-sans">
+    <div className="min-h-screen bg-[#FFF9F0] flex flex-col text-[#28243A] font-sans selection:bg-[#FFD65A] selection:text-[#28243A]">
       {/* Global Header */}
       <Header />
 
       {/* Presentation Bar / Utility Toolbar */}
-      <div className="bg-white/80 border-b border-[#ECEDEF] px-3 sm:px-6 py-2">
-        <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs text-[#50545E]">
+      <div className="bg-[#FFF2DE]/70 border-b border-[#FFD65A]/40 px-3 sm:px-6 py-2.5 backdrop-blur-xs">
+        <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs text-[#28243A]/70">
           {/* Left: View selector toggle */}
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-[#292A30] hidden sm:inline">Modo prototipo:</span>
-            <div className="flex items-center bg-[#ECEDEF] p-0.5 rounded-xl">
+            <span className="font-bold text-[#28243A] hidden sm:inline">Modo prototipo:</span>
+            <div className="flex items-center bg-white p-1 rounded-2xl border border-[#FFD65A]/50 shadow-xs">
               <button
                 onClick={() => setViewMode('mobile')}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg font-medium transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-xl font-bold transition-all ${
                   viewMode === 'mobile'
-                    ? 'bg-white text-[#292A30] shadow-xs'
-                    : 'text-[#50545E] hover:text-[#292A30]'
+                    ? 'bg-gradient-to-r from-[#FFD65A] to-[#FF936F] text-[#28243A] shadow-xs scale-102'
+                    : 'text-[#28243A]/70 hover:text-[#28243A]'
                 }`}
               >
                 <Smartphone className="w-3.5 h-3.5" />
@@ -102,10 +102,10 @@ const AppContent: React.FC = () => {
               </button>
               <button
                 onClick={() => setViewMode('split')}
-                className={`hidden md:flex items-center gap-1.5 px-3 py-1 rounded-lg font-medium transition-all ${
+                className={`hidden md:flex items-center gap-1.5 px-3 py-1 rounded-xl font-bold transition-all ${
                   viewMode === 'split'
-                    ? 'bg-white text-[#292A30] shadow-xs'
-                    : 'text-[#50545E] hover:text-[#292A30]'
+                    ? 'bg-gradient-to-r from-[#FF936F] to-[#FF80B5] text-white shadow-xs scale-102'
+                    : 'text-[#28243A]/70 hover:text-[#28243A]'
                 }`}
               >
                 <Columns2 className="w-3.5 h-3.5" />
@@ -119,25 +119,25 @@ const AppContent: React.FC = () => {
             {viewMode === 'mobile' && (
               <button
                 onClick={() => setUseDeviceFrame(!useDeviceFrame)}
-                className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[#D6D8DC] hover:bg-[#F8F7F4] transition-colors"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white border border-[#FFD65A]/50 hover:bg-[#FFF2DE] text-[#28243A] font-bold text-xs shadow-xs transition-all hover:scale-103"
                 title={useDeviceFrame ? 'Modo pantalla completa' : 'Modo marco de teléfono'}
               >
                 {useDeviceFrame ? (
                   <>
-                    <Maximize2 className="w-3 h-3 text-[#50545E]" />
+                    <Maximize2 className="w-3.5 h-3.5 text-[#FF936F]" />
                     <span>Expandir pantalla</span>
                   </>
                 ) : (
                   <>
-                    <Minimize2 className="w-3 h-3 text-[#50545E]" />
+                    <Minimize2 className="w-3.5 h-3.5 text-[#FF936F]" />
                     <span>Marco de teléfono</span>
                   </>
                 )}
               </button>
             )}
 
-            <div className="flex items-center gap-1.5 text-[11px] text-[#7A7E89]">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-[#72D6B1]/20 border border-[#72D6B1]/50 text-[11px] font-bold text-[#1D6E50]">
+              <span className="w-2 h-2 rounded-full bg-[#72D6B1] animate-ping" />
               <span>Multi-dispositivo en vivo</span>
             </div>
           </div>
@@ -153,10 +153,10 @@ const AppContent: React.FC = () => {
             <div className="lg:col-span-6 space-y-4">
               <div className="sticky top-20">
                 <div className="mb-3 flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#4F4275] bg-[#DCD5F5]/60 px-2 py-0.5 rounded-md">
+                  <span className="text-xs font-black uppercase tracking-wider text-[#58399E] bg-[#B69AF5]/25 border border-[#B69AF5]/40 px-3 py-1 rounded-xl shadow-xs">
                     Simulador de Hardware
                   </span>
-                  <span className="text-xs text-[#7A7E89]">Reacción en tiempo real</span>
+                  <span className="text-xs font-bold text-[#FF936F]">Reacción en tiempo real</span>
                 </div>
                 <DevicesView />
               </div>
@@ -165,7 +165,7 @@ const AppContent: React.FC = () => {
             {/* Column 2: Connected App Interface */}
             <div className="lg:col-span-6 space-y-4">
               <div className="mb-3 flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#2D5A3C] bg-[#D9E8DE]/60 px-2 py-0.5 rounded-md">
+                <span className="text-xs font-black uppercase tracking-wider text-[#1D6E50] bg-[#72D6B1]/25 border border-[#72D6B1]/40 px-3 py-1 rounded-xl shadow-xs">
                   {activeTab === 'home'
                     ? 'Inicio'
                     : activeTab === 'circle'
@@ -174,7 +174,7 @@ const AppContent: React.FC = () => {
                     ? 'Perfil'
                     : 'EmotiApp'}
                 </span>
-                <span className="text-xs text-[#7A7E89]">Sincronización Cloud</span>
+                <span className="text-xs font-bold text-[#79B9F2]">Sincronización Cloud</span>
               </div>
               {renderCurrentView()}
             </div>

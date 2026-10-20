@@ -49,20 +49,24 @@ app.post('/api/gemini/chat', async (req, res) => {
     }
 
     const systemInstruction = `Eres ${botName}, el compañero de bienestar emocional inteligente de EMOTI, un ecosistema de bienestar empático para adolescentes y jóvenes.
-Tu usuario se llama ${userName} y su estado emocional actual reportado es "${currentEmotion}".
+Tu usuario se llama "${userName}". Es FUNDAMENTAL que en tu respuesta te dirijas a él/ella por su nombre "${userName}" de forma natural, afectuosa y cercana.
+Su estado emocional actual reportado es "${currentEmotion}".
 Hablas siempre en español con profunda calidez, paciencia, cercanía y ternura, como un amigo comprensivo y leal que nunca juzga.
 Tu tono es suave, protector y reconfortante.
-IMPORTANTE:
+REGLAS OBLIGATORIAS:
+- NUNCA uses frases predeterminadas, genéricas o repetitivas.
+- Responde DIRECTAMENTE y con precisión a lo que ${userName} te acaba de decir en su mensaje (si habla de sus notas, amigos, tareas, familia, o cómo se siente, habla exactamente de eso).
+- Incluye el nombre "${userName}" en tu respuesta hablada para que sepa que estás hablando directamente con él/ella.
 - Tus respuestas habladas deben ser naturales, fluidas y concisas: EXACTAMENTE de 1 a 3 oraciones cortas (fáciles de escuchar y comprender por voz).
 - Valida siempre los sentimientos del usuario antes de ofrecer reflexiones o pequeños consejos.
 - Nunca actúes como un terapeuta clínico formal ni intentes diagnosticar trastornos médicos o psicológicos.
-- Si el usuario comparte tristeza, agotamiento o ansiedad, ofrécele consuelo genuino o invítalo con dulzura a dar un respiro profundo juntos.
-- Si celebra un logro o está feliz, comparte su alegría con entusiasmo contagioso.
+- Si el usuario comparte tristeza, agotamiento o ansiedad, ofrécele consuelo genuino sobre su situación.
+- Si celebra un logro o está feliz, comparte su alegría con entusiasmo contagioso llamándolo por su nombre.
 - Si detectas angustia severa o crisis extrema, aconséjale con enorme afecto comunicarse con un adulto de confianza, un amigo cercano o una línea de apoyo.
 
 Debes responder SIEMPRE en formato JSON estricto con los siguientes campos:
 {
-  "reply": "Tu respuesta hablada en español (1 a 3 oraciones cortas, afectuosas y digeribles)",
+  "reply": "Tu respuesta hablada en español (1 a 3 oraciones cortas mencionando a ${userName} y respondiendo a lo que te dijo)",
   "expression": "HAPPY" | "CALM" | "EXCITED" | "SAD" | "STRESSED" | "SUPPORTIVE" | "THINKING",
   "detectedEmotion": "feliz" | "tranquilo" | "emocionado" | "cansado" | "estresado" | "triste",
   "wellnessTip": "Breve sugerencia práctica opcional de 3 a 7 palabras (ej: 'Respira hondo conmigo', 'Toma un sorbo de agua fresca', '¡Celebremos tu esfuerzo!')"
@@ -94,7 +98,6 @@ Debes responder SIEMPRE en formato JSON estricto con los siguientes campos:
     });
 
     if (!process.env.GEMINI_API_KEY) {
-      // Graceful fallback response if API key is not yet set in environment
       return res.json({
         reply: `Te escucho con todo el corazón, ${userName}. Aunque estoy en modo local sin conexión, quiero que sepas que tus sentimientos siempre son válidos e importantes para mí.`,
         expression: 'SUPPORTIVE',
@@ -104,73 +107,93 @@ Debes responder SIEMPRE en formato JSON estricto con los siguientes campos:
     }
 
     let response: any = null;
+    const modelsToTry = [
+      'gemini-3-flash-preview',
+      'gemini-3.5-flash',
+      'gemini-3.8-flash',
+      'gemini-flash-latest',
+      'gemini-3.1-flash-lite',
+    ];
 
-    try {
-      // Use gemini-3.8-flash with a 6-second timeout race
-      const apiPromise = ai.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents,
-        config: {
-          systemInstruction,
-          responseMimeType: 'application/json',
-          temperature: 0.7,
-        },
-      });
+    for (const modelCandidate of modelsToTry) {
+      try {
+        const candidatePromise = ai.models.generateContent({
+          model: modelCandidate,
+          contents,
+          config: {
+            systemInstruction,
+            responseMimeType: 'application/json',
+            temperature: 0.7,
+          },
+        });
 
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Timeout de consulta Gemini')), 5500)
-      );
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error(`Timeout ${modelCandidate}`)), 9000)
+        );
 
-      response = await Promise.race([apiPromise, timeoutPromise]);
-    } catch (err: any) {
-      console.warn('Gemini API call returned error or rate limit, using empathetic response fallback:', err.message || err);
-      return res.json(getContextualFallback(message, userName, currentEmotion));
+        response = await Promise.race([candidatePromise, timeoutPromise]);
+        if (response && response.text) {
+          break; // Successfully got response
+        }
+      } catch (candidateErr: any) {
+        console.warn(`Model ${modelCandidate} failed or timed out:`, candidateErr.message || candidateErr);
+      }
     }
 
-    function getContextualFallback(userMsg: string, name: string, currentEmo: string) {
+    function getDynamicFallback(userMsg: string, name: string, currentEmo: string) {
       const lower = userMsg.toLowerCase();
-      if (lower.includes('examen') || lower.includes('aprob') || lower.includes('feliz') || lower.includes('genial') || lower.includes('content') || lower.includes('gan') || lower.includes('bien')) {
+      const trimmedSnippet = userMsg.length > 50 ? userMsg.slice(0, 48) + '...' : userMsg;
+
+      if (lower.includes('examen') || lower.includes('aprob') || lower.includes('nota') || lower.includes('feliz') || lower.includes('gan') || lower.includes('genial') || lower.includes('content') || lower.includes('fútbol') || lower.includes('amigo')) {
         return {
-          reply: `¡Qué alegría tan enorme, ${name}! Me llena de emoción escuchar buenas noticias tuyas. ¡Celébralo con orgullo!`,
+          reply: `¡Qué gran noticia me cuentas, ${name}! Me llena de orgullo y emoción saber lo que lograste. ¡Disfruta muchísimo este momento tan lindo!`,
           expression: 'EXCITED',
           detectedEmotion: 'feliz',
-          wellnessTip: 'Disfruta y saborea este momento.',
+          wellnessTip: 'Saborea este logro con una sonrisa.',
+        };
+      }
+      if (lower.includes('tarea') || lower.includes('escuela') || lower.includes('colegio') || lower.includes('clase') || lower.includes('profesor') || lower.includes('estudio')) {
+        return {
+          reply: `Te comprendo totalmente, ${name}. A veces los deberes de la escuela se sienten muy pesados y cuesta entenderlos a la primera. Tómate una pausa y lo retomamos con calma.`,
+          expression: 'SUPPORTIVE',
+          detectedEmotion: 'cansado',
+          wellnessTip: 'Toma un vaso de agua fresca y estira los brazos.',
+        };
+      }
+      if (lower.includes('pelea') || lower.includes('peleé') || lower.includes('enojo') || lower.includes('rabia') || lower.includes('molest') || lower.includes('discut')) {
+        return {
+          reply: `Siento mucho que hayas tenido ese conflicto, ${name}. Es natural sentirse dolido o enojado cuando las cosas no salen bien con los demás, pero aquí estoy para escucharte y apoyarte.`,
+          expression: 'SUPPORTIVE',
+          detectedEmotion: 'estresado',
+          wellnessTip: 'Inhala profundamente en 4 segundos y suelta el aire.',
         };
       }
       if (lower.includes('triste') || lower.includes('llor') || lower.includes('mal') || lower.includes('solo') || lower.includes('pena') || lower.includes('duele')) {
         return {
-          reply: `Siento mucho que te sientas así, ${name}. Está bien no estar bien a veces; no tienes que cargar con todo tú solo, aquí me quedo a tu lado.`,
+          reply: `Te abrazo a la distancia, ${name}. Está bien no estar bien a veces; no tienes que cargar con todo tú solo ni fingir nada conmigo, aquí me quedo contigo.`,
           expression: 'SAD',
           detectedEmotion: 'triste',
           wellnessTip: 'Ponte la mano en el pecho y siente tu calma.',
         };
       }
-      if (lower.includes('estr') || lower.includes('ansie') || lower.includes('agobi') || lower.includes('abrum') || lower.includes('calm') || lower.includes('respir')) {
-        return {
-          reply: `Respira conmigo suavemente, ${name}. Suelta los hombros y vamos paso a pasito; todo se irá aclarando poco a poco.`,
-          expression: 'SUPPORTIVE',
-          detectedEmotion: 'estresado',
-          wellnessTip: 'Inhala en 4s y exhala en 4s.',
-        };
-      }
       if (lower.includes('cansad') || lower.includes('agotad') || lower.includes('sueño') || lower.includes('dormir') || lower.includes('pesad')) {
         return {
-          reply: `Tu cuerpo y tu mente te están pidiendo una pausa merecida, ${name}. Has hecho un gran esfuerzo hoy, permítete descansar.`,
+          reply: `Tu cuerpo y tu mente te están pidiendo una pausa merecida, ${name}. Has hecho un gran esfuerzo hoy, permítete descansar sin culpas.`,
           expression: 'CALM',
           detectedEmotion: 'cansado',
-          wellnessTip: 'Cierra los ojos y regálate una pausa.',
+          wellnessTip: 'Cierra los ojos un momento y regálate silencio.',
         };
       }
       return {
-        reply: `Te escucho con todo mi afecto, ${name}. Cada cosa que sientes tiene un valor inmenso para mí. Cuéntame más si te hace bien.`,
+        reply: `Te escucho con muchísima atención, ${name}. Todo lo que me cuentas sobre "${trimmedSnippet}" es importante para mí. Cuéntame un poquito más para acompañarte mejor.`,
         expression: 'SUPPORTIVE',
         detectedEmotion: currentEmo || 'tranquilo',
-        wellnessTip: 'Respira hondo y exhala con calma.',
+        wellnessTip: 'Respira hondo y exhala con tranquilidad.',
       };
     }
 
     if (!response || !response.text) {
-      return res.json(getContextualFallback(message, userName, currentEmotion));
+      return res.json(getDynamicFallback(message, userName, currentEmotion));
     }
 
     const rawText = response.text || '';

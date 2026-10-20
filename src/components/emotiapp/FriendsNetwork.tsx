@@ -12,7 +12,9 @@ import {
   X, 
   Clock, 
   Heart,
-  MessageCircle
+  MessageCircle,
+  Zap,
+  CheckCircle2
 } from 'lucide-react';
 
 export const FriendsNetwork: React.FC = () => {
@@ -21,6 +23,8 @@ export const FriendsNetwork: React.FC = () => {
     sendEnergySpark,
     sparksHistory,
     totalSparksSent,
+    triggerSparkBurst,
+    showToast
   } = useEmoti();
 
   const [activeFriendForSpark, setActiveFriendForSpark] = useState<Friend | null>(null);
@@ -31,97 +35,122 @@ export const FriendsNetwork: React.FC = () => {
     if (!activeFriendForSpark) return;
     const finalMsg = customMessage.trim() || selectedMessage;
     sendEnergySpark(activeFriendForSpark.id, finalMsg);
+    triggerSparkBurst();
+    showToast(`¡Chispa de energía enviada a ${activeFriendForSpark.name}! ✨`, 'spark');
     setActiveFriendForSpark(null);
     setCustomMessage('');
   };
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-6 pb-24 animate-pop-in">
       {/* Header */}
       <div>
-        <span className="text-xs uppercase tracking-wider font-semibold text-[#2D5A3C] bg-[#D9E8DE]/60 px-2 py-0.5 rounded-md">
-          Red de Apoyo
+        <span className="text-xs uppercase tracking-wider font-black text-[#1D6E50] bg-[#72D6B1]/25 border border-[#72D6B1]/40 px-3 py-1 rounded-xl shadow-xs">
+          Red Social Consciente
         </span>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#292A30] tracking-tight mt-1">
-          Amigos & Conexión
+        <h1 className="text-2xl sm:text-3xl font-black text-[#28243A] tracking-tight mt-1.5 flex items-center gap-2">
+          <span>Amigos & Energy Sparks</span>
+          <span className="text-2xl animate-bounce">⚡</span>
         </h1>
-        <p className="text-xs sm:text-sm text-[#50545E] mt-1">
-          Una red íntima y segura de amistades de confianza. Envía Chispas de Energía para acompañar sin invadir.
+        <p className="text-xs sm:text-sm text-[#28243A]/70 font-medium mt-1">
+          Comparte energía positiva, acompáñate de tu círculo de confianza y envía chispas sin invadir su espacio.
         </p>
       </div>
 
-      {/* Privacy Notice Banner */}
-      <div className="bg-[#F8F7F4] rounded-2xl p-4 border border-[#ECEDEF] flex items-start gap-3">
-        <Lock className="w-4 h-4 text-[#50545E] shrink-0 mt-0.5" />
-        <div className="text-xs text-[#50545E] leading-relaxed">
-          <strong className="text-[#292A30]">Privacidad emocional consciente:</strong> Los estados de ánimo mostrados son perfiles demostrativos basados únicamente en la información que cada amigo decide voluntariamente compartir con su círculo cercano.
+      {/* Spark Stats Banner */}
+      <div className="bg-gradient-to-r from-[#FFD65A]/30 via-[#FF936F]/25 to-[#FF80B5]/30 rounded-3xl p-4 sm:p-5 border-2 border-[#FFD65A]/50 shadow-sm flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#FFD65A] to-[#FF936F] text-[#28243A] flex items-center justify-center font-black shadow-xs">
+            <Zap className="w-6 h-6 fill-[#28243A]" />
+          </div>
+          <div>
+            <h3 className="font-black text-sm text-[#28243A]">Total de Chispas Enviadas</h3>
+            <p className="text-xs text-[#28243A]/70 font-medium">Cada chispa ilumina el día de un amigo</p>
+          </div>
+        </div>
+        <div className="text-right">
+          <span className="text-2xl sm:text-3xl font-black text-[#28243A] font-mono">
+            {totalSparksSent}
+          </span>
+          <span className="block text-[10px] font-bold text-[#A03E15]">SPARKS ✨</span>
         </div>
       </div>
 
-      {/* Friends Cards List */}
-      <div className="space-y-3">
+      {/* Friends Cards List with large colorful avatars and rich cards */}
+      <div className="space-y-3.5">
         {friends.map((friend) => {
           const moodMeta = friend.sharedMood ? EMOTIONS_CONFIG[friend.sharedMood] : null;
 
           return (
             <div
               key={friend.id}
-              className="bg-white rounded-3xl p-5 border border-[#ECEDEF] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-[#DCD5F5] transition-all"
+              className="bg-white rounded-3xl p-5 border-2 border-[#FFD65A]/40 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-[#FF936F] transition-all hover:shadow-md group"
             >
               {/* Left: Avatar & Info */}
-              <div className="flex items-start gap-3.5">
+              <div className="flex items-start gap-4">
                 <div className="relative shrink-0">
                   <div
-                    className="w-13 h-13 rounded-2xl flex items-center justify-center font-bold text-sm shadow-xs"
+                    className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center font-black text-base sm:text-lg shadow-sm border-2 border-white transition-transform group-hover:scale-105"
                     style={{ backgroundColor: friend.avatarBg, color: friend.avatarColor }}
                   >
                     {friend.avatarInitials}
                   </div>
                   {friend.isOnline && (
                     <span
-                      className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white"
+                      className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-[#72D6B1] border-2 border-white shadow-xs animate-pulse"
                       title="En línea"
                     />
                   )}
                 </div>
 
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-sm sm:text-base text-[#292A30]">
+                    <h3 className="font-black text-base text-[#28243A]">
                       {friend.name}
                     </h3>
-                    <span className="text-[11px] text-[#7A7E89]">
+                    <span 
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                        friend.isOnline 
+                          ? 'bg-[#72D6B1]/20 text-[#1D6E50] border-[#72D6B1]/40' 
+                          : 'bg-gray-100 text-gray-500 border-gray-200'
+                      }`}
+                    >
                       {friend.isOnline ? 'En línea' : 'Desconectado'}
                     </span>
                   </div>
 
                   {/* Shared Mood Badge */}
                   {moodMeta ? (
-                    <div className="flex items-center gap-1.5 text-xs text-[#50545E]">
-                      <span>Estado compartido:</span>
-                      <span className="font-medium text-[#292A30] capitalize flex items-center gap-1">
+                    <div className="flex items-center gap-2 text-xs font-bold text-[#28243A]/80">
+                      <span>Estado:</span>
+                      <span 
+                        className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-xl border font-black capitalize"
+                        style={{ backgroundColor: `${moodMeta.accentHex}30`, borderColor: moodMeta.accentHex, color: moodMeta.colorText }}
+                      >
                         <span>{moodMeta.emoji}</span>
                         <span>{moodMeta.label}</span>
                       </span>
                     </div>
                   ) : (
-                    <span className="text-xs text-[#7A7E89]">Estado privado</span>
+                    <span className="text-xs text-[#28243A]/50 italic">Estado reservado</span>
                   )}
 
                   {/* Status Quote */}
-                  <p className="text-xs text-[#50545E] italic">
+                  <p className="text-xs text-[#28243A]/70 italic font-medium">
                     "{friend.statusQuote}"
                   </p>
                 </div>
               </div>
 
               {/* Right: Sparks Received & Send Spark Action */}
-              <div className="flex items-center justify-between sm:justify-end gap-3 pt-3 sm:pt-0 border-t sm:border-0 border-[#ECEDEF]">
-                <div className="text-[11px] text-[#7A7E89] text-left sm:text-right">
-                  <span className="font-semibold text-[#292A30] block">
-                    {friend.sparksReceivedCount} chispas
+              <div className="flex items-center justify-between sm:justify-end gap-3 pt-3 sm:pt-0 border-t sm:border-0 border-[#FFD65A]/20">
+                <div className="text-[11px] text-left sm:text-right">
+                  <span className="font-black text-[#28243A] block">
+                    {friend.sparksReceivedCount} chispas recibidas
                   </span>
-                  <span>{friend.lastSparkTimestamp || 'Sin interacción hoy'}</span>
+                  <span className="text-[#28243A]/60 font-medium">
+                    {friend.lastSparkTimestamp || 'Sin interacción hoy'}
+                  </span>
                 </div>
 
                 <button
@@ -129,9 +158,9 @@ export const FriendsNetwork: React.FC = () => {
                     setActiveFriendForSpark(friend);
                     setSelectedMessage(QUICK_SPARK_MESSAGES[0]);
                   }}
-                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#DCD5F5] to-[#E5DFFA] hover:from-[#d1c8f4] hover:to-[#dbd3f8] text-[#372A5E] text-xs font-semibold shadow-xs transition-transform active:scale-95"
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-[#FFD65A] via-[#FF936F] to-[#FF80B5] hover:scale-105 text-[#28243A] text-xs font-black shadow-[0_4px_14px_rgba(255,147,111,0.35)] transition-all active:scale-95 border border-white"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-[#4F4275]" />
+                  <Sparkles className="w-3.5 h-3.5 fill-[#28243A]" />
                   <span>Enviar chispa ✨</span>
                 </button>
               </div>
@@ -140,134 +169,77 @@ export const FriendsNetwork: React.FC = () => {
         })}
       </div>
 
-      {/* Energy Sparks Activity History */}
-      <div className="bg-white rounded-3xl p-5 border border-[#ECEDEF] shadow-xs space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-[#4F4275]" />
-            <h3 className="font-bold text-sm text-[#292A30]">
-              Historial de Chispas & Apoyo
-            </h3>
-          </div>
-          <span className="text-xs font-semibold text-[#50545E]">
-            {totalSparksSent} enviadas
-          </span>
-        </div>
-
-        {sparksHistory.length === 0 ? (
-          <p className="text-xs text-[#7A7E89] py-3 text-center">
-            Aún no has enviado chispas hoy.
-          </p>
-        ) : (
-          <div className="space-y-2.5">
-            {sparksHistory.map((item) => (
-              <div
-                key={item.id}
-                className="p-3 rounded-2xl bg-[#F8F7F4] border border-[#ECEDEF] flex items-center justify-between text-xs"
-              >
-                <div className="flex items-center gap-2.5">
-                  <span className="text-sm">✨</span>
-                  <div>
-                    <span className="font-semibold text-[#292A30]">
-                      Para {item.friendName}:
-                    </span>{' '}
-                    <span className="text-[#50545E]">"{item.message}"</span>
-                  </div>
-                </div>
-                <span className="text-[11px] font-mono text-[#7A7E89] shrink-0 ml-2">
-                  {item.timestamp}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Energy Spark Modal */}
+      {/* Interactive Send Spark Modal */}
       {activeFriendForSpark && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-[#ECEDEF] relative space-y-4">
-            <button
-              onClick={() => setActiveFriendForSpark(null)}
-              className="absolute top-4 right-4 p-1.5 rounded-lg text-[#50545E] hover:bg-[#ECEDEF] transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            {/* Modal Header */}
-            <div className="flex items-center gap-3">
-              <div
-                className="w-11 h-11 rounded-2xl flex items-center justify-center font-bold text-sm shadow-xs"
-                style={{
-                  backgroundColor: activeFriendForSpark.avatarBg,
-                  color: activeFriendForSpark.avatarColor,
-                }}
+        <div className="fixed inset-0 z-50 bg-[#28243A]/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-[#FFF9F0] border-2 border-[#FFD65A] rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-pop-in">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#FFD65A] to-[#FF936F] text-[#28243A] flex items-center justify-center font-black shadow-xs">
+                  ✨
+                </div>
+                <div>
+                  <h3 className="font-black text-base text-[#28243A]">
+                    Enviar Chispa a {activeFriendForSpark.name}
+                  </h3>
+                  <p className="text-xs text-[#28243A]/70 font-medium">Un abrazo de energía positivo</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setActiveFriendForSpark(null)}
+                className="p-1 rounded-xl hover:bg-[#FFD65A]/30 text-[#28243A]"
               >
-                {activeFriendForSpark.avatarInitials}
-              </div>
-              <div>
-                <h3 className="font-bold text-base text-[#292A30]">
-                  Enviar chispa a {activeFriendForSpark.name} ✨
-                </h3>
-                <p className="text-xs text-[#50545E]">
-                  Elige un mensaje de apoyo afectivo o escribe el tuyo propio.
-                </p>
-              </div>
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
-            {/* Quick Supportive Messages */}
+            {/* Quick Messages */}
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-[#50545E]">
-                Mensajes rápidos de apoyo:
+              <label className="text-xs font-black text-[#28243A]">
+                Elige un mensaje empático rápido:
               </label>
-              <div className="space-y-1.5">
+              <div className="grid grid-cols-1 gap-2">
                 {QUICK_SPARK_MESSAGES.map((msg, i) => (
                   <button
                     key={i}
-                    onClick={() => {
-                      setSelectedMessage(msg);
-                      setCustomMessage('');
-                    }}
-                    className={`w-full text-left p-2.5 rounded-xl text-xs transition-all ${
-                      selectedMessage === msg && !customMessage
-                        ? 'bg-[#DCD5F5]/60 text-[#292A30] font-semibold border border-[#DCD5F5]'
-                        : 'bg-[#F8F7F4] text-[#50545E] hover:bg-[#ECEDEF]'
+                    onClick={() => setSelectedMessage(msg)}
+                    className={`p-2.5 rounded-xl border-2 text-left text-xs font-bold transition-all ${
+                      selectedMessage === msg
+                        ? 'bg-[#FFD65A]/30 border-[#FF936F] text-[#28243A] shadow-xs'
+                        : 'bg-white border-[#FFD65A]/40 text-[#28243A]/80 hover:border-[#FFD65A]'
                     }`}
                   >
-                    "{msg}"
+                    {msg}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Custom message input */}
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-[#50545E]">
-                O escribe tu propio mensaje:
-              </label>
+            {/* Custom message */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-black text-[#28243A]">O escribe algo especial:</label>
               <input
                 type="text"
                 value={customMessage}
                 onChange={(e) => setCustomMessage(e.target.value)}
-                placeholder="Ej. ¡Éxito en tu presentación de hoy! Te acompaño..."
-                className="w-full bg-[#F8F7F4] border border-[#D6D8DC] rounded-xl px-3.5 py-2 text-xs text-[#292A30] focus:outline-none focus:ring-2 focus:ring-[#DCD5F5]"
+                placeholder="Escribe tu mensaje personal..."
+                className="w-full bg-white border-2 border-[#FFD65A]/50 rounded-2xl px-3.5 py-2 text-xs text-[#28243A] font-medium focus:outline-none focus:border-[#FF936F]"
               />
             </div>
 
-            {/* Actions */}
-            <div className="pt-2 flex justify-end gap-2">
+            <div className="flex gap-2.5 pt-2">
               <button
                 onClick={() => setActiveFriendForSpark(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-[#50545E] hover:bg-[#ECEDEF]"
+                className="flex-1 py-2.5 rounded-2xl bg-white border border-[#28243A]/10 text-xs font-bold text-[#28243A] hover:bg-[#FFF2DE] transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleSend}
-                className="px-5 py-2 rounded-xl bg-[#292A30] hover:bg-black text-white text-xs font-semibold shadow-xs flex items-center gap-1.5"
+                className="flex-1 py-2.5 rounded-2xl bg-gradient-to-r from-[#FFD65A] via-[#FF936F] to-[#FF80B5] text-[#28243A] text-xs font-black hover:scale-103 active:scale-95 transition-all shadow-[0_4px_12px_rgba(255,147,111,0.35)] flex items-center justify-center gap-1.5"
               >
-                <Sparkles className="w-3.5 h-3.5 text-[#DCD5F5]" />
-                <span>Enviar Chispa</span>
+                <Send className="w-3.5 h-3.5" />
+                <span>Enviar Chispa ✨</span>
               </button>
             </div>
           </div>

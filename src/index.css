@@ -1,11 +1,23 @@
 @import "tailwindcss";
 
 @layer base {
+  :root {
+    --emoti-yellow: #FFD65A;
+    --emoti-mint: #72D6B1;
+    --emoti-coral: #FF936F;
+    --emoti-blue: #79B9F2;
+    --emoti-purple: #B69AF5;
+    --emoti-pink: #FF80B5;
+    --emoti-cream: #FFF9F0;
+    --emoti-dark: #28243A;
+  }
+
   body {
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    color: #292A30;
-    background-color: #F8F7F4;
+    color: #28243A;
+    background-color: #FFF9F0;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
 }
 
@@ -15,8 +27,8 @@
     opacity: 0.8;
   }
   50% {
-    transform: scale(1.15);
-    opacity: 0.3;
+    transform: scale(1.18);
+    opacity: 0.25;
   }
   100% {
     transform: scale(0.95);
@@ -26,7 +38,7 @@
 
 @keyframes ecg-flow {
   0% {
-    stroke-dashoffset: 100;
+    stroke-dashoffset: 200;
   }
   100% {
     stroke-dashoffset: 0;
@@ -35,10 +47,24 @@
 
 @keyframes soft-float {
   0%, 100% {
-    transform: translateY(0px);
+    transform: translateY(0px) rotate(0deg);
   }
   50% {
-    transform: translateY(-6px);
+    transform: translateY(-8px) rotate(1deg);
+  }
+}
+
+@keyframes pop-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  70% {
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
@@ -48,11 +74,21 @@
     opacity: 1;
   }
   50% {
-    opacity: 0.9;
+    opacity: 0.95;
+    transform: scale(1.3) rotate(25deg);
   }
   100% {
-    transform: scale(1.5) rotate(45deg);
+    transform: scale(2) rotate(60deg);
     opacity: 0;
+  }
+}
+
+@keyframes wave-bounce {
+  0%, 100% {
+    transform: scaleY(0.4);
+  }
+  50% {
+    transform: scaleY(1);
   }
 }
 
@@ -64,18 +100,23 @@
   animation: soft-float 4s ease-in-out infinite;
 }
 
-/* Custom subtle scrollbar */
+.animate-pop-in {
+  animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Custom playful colorful scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #FFF9F0;
 }
 ::-webkit-scrollbar-thumb {
-  background: #ECEDEF;
+  background: #FFD65A;
   border-radius: 9999px;
+  border: 2px solid #FFF9F0;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #DCD5F5;
+  background: #FF936F;
 }

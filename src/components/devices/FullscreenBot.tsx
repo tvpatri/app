@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useEmoti } from '../../context/EmotiContext';
+import { useAuth } from '../../context/AuthContext';
 import { BotExpression, EmotionType, VoiceBotState, VoiceChatMessage } from '../../types';
 import { EMOTIONS_CONFIG } from '../../data/emotionsData';
 import { VoiceService } from '../../services/voiceService';
@@ -9,7 +10,7 @@ import { VoiceConversationDrawer } from './VoiceConversationDrawer';
 import { 
   X, 
   Sparkles, 
-  RotateCw,
+  RotateCw, 
   Heart, 
   Mic, 
   MicOff, 
@@ -41,6 +42,14 @@ export const FullscreenBot: React.FC = () => {
     showToast,
   } = useEmoti();
 
+  const { userProfile, user } = useAuth();
+  const effectiveUserName =
+    userProfile?.displayName?.trim() ||
+    user?.displayName?.trim() ||
+    (userProfile?.username ? `@${userProfile.username}` : '') ||
+    'amigo';
+  const effectiveBotName = userProfile?.botName?.trim() || botName || 'Milo';
+
   // Voice Conversation States
   const [voiceState, setVoiceState] = useState<VoiceBotState>('IDLE');
   const [isBlinking, setIsBlinking] = useState(false);
@@ -56,22 +65,30 @@ export const FullscreenBot: React.FC = () => {
   const [breathingSeconds, setBreathingSeconds] = useState(4);
   const [speakingLipSync, setSpeakingLipSync] = useState(0);
 
+  // Initialize friendly welcoming message with user's actual name
+  useEffect(() => {
+    if (botMessage === 'Disfruta este momento.' || !botMessage) {
+      setBotMessage(`¡Hola, ${effectiveUserName}! Soy tu ${effectiveBotName}. Cuéntame cómo te sientes hoy o de qué te gustaría hablar.`);
+    }
+  }, [effectiveUserName, effectiveBotName]);
+
   // Background color mapping per emotion
+  // Background color mapping per emotion with vibrant brand palette
   const getBackgroundColor = () => {
     switch (currentEmotion) {
       case 'feliz':
-        return 'bg-[#FEF3C7] text-[#78350F]'; // Warm pastel yellow
+        return 'bg-[#FFD65A] text-[#28243A]'; // Amarillo vibrante
       case 'tranquilo':
-        return 'bg-[#D9E8DE] text-[#1E3A27]'; // Soft sage green
+        return 'bg-[#72D6B1] text-[#28243A]'; // Verde menta
       case 'emocionado':
-        return 'bg-[#FCE7D6] text-[#7C2D12]'; // Pastel peach
+        return 'bg-[#FF936F] text-[#28243A]'; // Naranja coral
       case 'triste':
-        return 'bg-[#DCEAF4] text-[#1E3A5F]'; // Muted blue
+        return 'bg-[#79B9F2] text-[#28243A]'; // Azul
       case 'estresado':
-        return 'bg-[#DCD5F5] text-[#3B2D54]'; // Soft lavender
+        return 'bg-[#FF80B5] text-[#28243A]'; // Rosa
       case 'cansado':
       default:
-        return 'bg-[#ECEAE4] text-[#383734]'; // Warm light gray
+        return 'bg-[#B69AF5] text-[#28243A]'; // Lila
     }
   };
 
@@ -235,8 +252,8 @@ export const FullscreenBot: React.FC = () => {
         message: userText,
         history: chatHistory,
         currentEmotion,
-        botName,
-        userName: 'Alex',
+        botName: effectiveBotName,
+        userName: effectiveUserName,
       });
 
       // Update bot message
@@ -575,7 +592,10 @@ export const FullscreenBot: React.FC = () => {
             }`}
           />
           <span className="text-xs font-bold tracking-tight text-current">
-            {botName}
+            {effectiveBotName}
+          </span>
+          <span className="text-[10px] opacity-80 font-medium bg-black/5 px-1.5 py-0.5 rounded-md">
+            {effectiveUserName}
           </span>
           <span className="text-[10px] opacity-70">
             {voiceState === 'LISTENING'
@@ -584,7 +604,7 @@ export const FullscreenBot: React.FC = () => {
               ? '· Pensando...'
               : voiceState === 'SPEAKING'
               ? '· Hablando...'
-              : '· Compañero IA'}
+              : '· IA Activa'}
           </span>
         </div>
 
@@ -757,36 +777,36 @@ export const FullscreenBot: React.FC = () => {
       {/* Suggested Starter Chips (Quick Spanish prompts) */}
       <div className="relative z-20 max-w-md w-full mx-auto px-2 mb-2">
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-[11px]">
-          <span className="text-xs font-bold shrink-0 opacity-60">Sugerencias:</span>
+          <span className="text-xs font-bold shrink-0 opacity-70">Ideas:</span>
           <button
-            onClick={() => handleQuickPrompt('Me siento un poco abrumado con tantas cosas hoy.')}
-            className="shrink-0 px-2.5 py-1 rounded-full bg-white/70 hover:bg-white text-[#292A30] font-medium border border-white/60 transition-all active:scale-95 shadow-2xs"
+            onClick={() => handleQuickPrompt('Me siento un poco abrumado con las tareas y necesito calmarme.')}
+            className="shrink-0 px-2.5 py-1 rounded-full bg-white/75 hover:bg-white text-[#292A30] font-medium border border-white/60 transition-all active:scale-95 shadow-2xs"
           >
             "Me siento abrumado"
           </button>
           <button
-            onClick={() => handleQuickPrompt('¡Aprobé mi examen y me siento muy contento!')}
-            className="shrink-0 px-2.5 py-1 rounded-full bg-white/70 hover:bg-white text-[#292A30] font-medium border border-white/60 transition-all active:scale-95 shadow-2xs"
+            onClick={() => handleQuickPrompt('¡Aprobé mi examen y me siento muy feliz!')}
+            className="shrink-0 px-2.5 py-1 rounded-full bg-white/75 hover:bg-white text-[#292A30] font-medium border border-white/60 transition-all active:scale-95 shadow-2xs"
           >
             "¡Aprobé mi examen!"
           </button>
           <button
-            onClick={() => handleQuickPrompt('Necesito una pausa y calmarme.')}
-            className="shrink-0 px-2.5 py-1 rounded-full bg-white/70 hover:bg-white text-[#292A30] font-medium border border-white/60 transition-all active:scale-95 shadow-2xs"
+            onClick={() => handleQuickPrompt('Tuve un desacuerdo con un amigo y me siento mal.')}
+            className="shrink-0 px-2.5 py-1 rounded-full bg-white/75 hover:bg-white text-[#292A30] font-medium border border-white/60 transition-all active:scale-95 shadow-2xs"
           >
-            "Necesito calmarme"
+            "Problema con un amigo"
           </button>
           <button
-            onClick={() => handleQuickPrompt('¿Cómo estás hoy, Milo? ¿Qué podemos hacer?')}
-            className="shrink-0 px-2.5 py-1 rounded-full bg-white/70 hover:bg-white text-[#292A30] font-medium border border-white/60 transition-all active:scale-95 shadow-2xs"
+            onClick={() => handleQuickPrompt(`¿Cómo estás hoy, ${effectiveBotName}? ¿De qué podemos hablar?`)}
+            className="shrink-0 px-2.5 py-1 rounded-full bg-white/75 hover:bg-white text-[#292A30] font-medium border border-white/60 transition-all active:scale-95 shadow-2xs"
           >
-            "¿Cómo estás, Milo?"
+            "¿Cómo estás, {effectiveBotName}?"
           </button>
         </div>
       </div>
 
       {/* Primary Interaction Zone: Prominent Circular Mic & Controls */}
-      <div className="relative z-20 max-w-md w-full mx-auto pb-2 space-y-2.5">
+      <div className="relative z-20 max-w-md w-full mx-auto pb-2 space-y-2">
         {/* Main Microphone Button Centerpiece */}
         <div className="flex items-center justify-center">
           <div className="relative flex items-center justify-center">
@@ -806,7 +826,7 @@ export const FullscreenBot: React.FC = () => {
             {/* Circular Microphone Button */}
             <button
               onClick={handleMicrophoneClick}
-              className={`relative z-10 w-18 h-18 sm:w-20 sm:h-20 rounded-full flex flex-col items-center justify-center transition-all duration-300 shadow-xl active:scale-90 ${
+              className={`relative z-10 w-18 h-18 sm:w-20 sm:h-20 rounded-full flex flex-col items-center justify-center transition-all duration-300 shadow-xl active:scale-90 cursor-pointer ${
                 voiceState === 'LISTENING'
                   ? 'bg-rose-500 text-white shadow-rose-500/50 ring-4 ring-rose-200'
                   : voiceState === 'SPEAKING'
@@ -849,12 +869,34 @@ export const FullscreenBot: React.FC = () => {
           </div>
         </div>
 
+        {/* Convenient Input Bar: Speak or Type immediately */}
+        <form
+          onSubmit={handleTextSubmit}
+          className="bg-white/90 backdrop-blur-md rounded-2xl p-1.5 border border-white/80 shadow-md flex items-center gap-2"
+        >
+          <input
+            type="text"
+            value={textInput}
+            onChange={(e) => setTextInput(e.target.value)}
+            placeholder={`Escribe a ${effectiveBotName} o usa el micrófono...`}
+            className="flex-1 bg-[#F8F7F4] px-3.5 py-2 rounded-xl text-xs text-[#292A30] placeholder:text-[#50545E]/60 focus:outline-none focus:ring-2 focus:ring-[#8BE9FD]"
+          />
+          <button
+            type="submit"
+            disabled={!textInput.trim() || voiceState === 'THINKING'}
+            className="p-2 rounded-xl bg-[#292A30] hover:bg-black text-white disabled:opacity-40 transition-colors cursor-pointer"
+            title="Enviar mensaje"
+          >
+            <Send className="w-3.5 h-3.5 text-[#8BE9FD]" />
+          </button>
+        </form>
+
         {/* Secondary Utility Controls */}
-        <div className="bg-white/90 backdrop-blur-lg rounded-2xl p-1.5 border border-white/80 shadow-lg flex items-center justify-between gap-1.5">
+        <div className="bg-white/75 backdrop-blur-md rounded-2xl p-1 border border-white/60 shadow-xs flex items-center justify-between gap-1.5">
           {/* Action 1: Cambiar emoción manual */}
           <button
             onClick={() => setShowEmotionSheet(true)}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl bg-[#F8F7F4] hover:bg-[#DCD5F5]/60 text-[#292A30] text-xs font-semibold transition-all active:scale-95"
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-white/60 hover:bg-[#DCD5F5]/60 text-[#292A30] text-xs font-semibold transition-all active:scale-95 cursor-pointer"
           >
             <Sparkles className="w-3.5 h-3.5 text-[#4F4275]" />
             <span className="truncate">Emoción</span>
@@ -863,49 +905,21 @@ export const FullscreenBot: React.FC = () => {
           {/* Action 2: Cambiar rostro */}
           <button
             onClick={cycleBotExpression}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl bg-[#F8F7F4] hover:bg-[#D9E8DE]/60 text-[#292A30] text-xs font-semibold transition-all active:scale-95"
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-white/60 hover:bg-[#D9E8DE]/60 text-[#292A30] text-xs font-semibold transition-all active:scale-95 cursor-pointer"
           >
             <RotateCw className="w-3.5 h-3.5 text-[#2D5A3C]" />
             <span className="truncate">Rostro</span>
           </button>
 
-          {/* Action 3: Escribir con teclado (Fallback) */}
+          {/* Action 3: Transcripción rápida */}
           <button
-            onClick={() => setShowKeyboardInput((prev) => !prev)}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-semibold transition-all active:scale-95 ${
-              showKeyboardInput
-                ? 'bg-[#292A30] text-white'
-                : 'bg-[#F8F7F4] hover:bg-[#F5DFD3]/60 text-[#292A30]'
-            }`}
+            onClick={() => setShowTranscriptDrawer(true)}
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-white/60 hover:bg-[#F5DFD3]/60 text-[#292A30] text-xs font-semibold transition-all active:scale-95 cursor-pointer"
           >
-            <Keyboard className="w-3.5 h-3.5 text-[#8C5835]" />
-            <span className="truncate">Teclado</span>
+            <MessageSquare className="w-3.5 h-3.5 text-[#8C5835]" />
+            <span className="truncate">Historial</span>
           </button>
         </div>
-
-        {/* Inline Keyboard Input Tray if toggled */}
-        {showKeyboardInput && (
-          <form
-            onSubmit={handleTextSubmit}
-            className="bg-white/95 backdrop-blur-md rounded-2xl p-2 border border-white/90 shadow-md flex items-center gap-2 animate-in fade-in duration-200"
-          >
-            <input
-              type="text"
-              value={textInput}
-              onChange={(e) => setTextInput(e.target.value)}
-              placeholder="Escribe tu mensaje a Milo en español..."
-              className="flex-1 bg-[#F8F7F4] px-3.5 py-2 rounded-xl text-xs text-[#292A30] placeholder:text-[#50545E]/60 focus:outline-none focus:ring-2 focus:ring-[#8BE9FD]"
-              autoFocus
-            />
-            <button
-              type="submit"
-              disabled={!textInput.trim() || voiceState === 'THINKING'}
-              className="p-2 rounded-xl bg-[#292A30] hover:bg-black text-white disabled:opacity-40 transition-colors"
-            >
-              <Send className="w-3.5 h-3.5 text-[#8BE9FD]" />
-            </button>
-          </form>
-        )}
       </div>
 
       {/* Bottom Sheet for Emotion Selection */}

@@ -86,14 +86,25 @@ export class VoiceService {
       recognition.interimResults = true;
       recognition.maxAlternatives = 1;
 
-      let finalTranscript = '';
+      let accumulatedFinal = '';
+      let hasDispatched = false;
+      let silenceTimer: any = null;
+
+      const finishAndDispatch = () => {
+        if (!hasDispatched && accumulatedFinal.trim()) {
+          hasDispatched = true;
+          const textToSend = accumulatedFinal.trim();
+          accumulatedFinal = '';
+          options.onFinal(textToSend);
+        }
+      };
 
       recognition.onresult = (event: any) => {
         let interimTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           const item = event.results[i];
           if (item.isFinal) {
-            finalTranscript += item[0].transcript;
+            accumulatedFinal += (accumulatedFinal ? ' ' : '') + item[0].transcript;
           } else {
             interimTranscript += item[0].transcript;
           }
@@ -103,25 +114,39 @@ export class VoiceService {
           options.onInterim(interimTranscript);
         }
 
-        if (finalTranscript) {
-          options.onFinal(finalTranscript.trim());
+        // Reset silence timer on new speech
+        if (silenceTimer) clearTimeout(silenceTimer);
+        if (accumulatedFinal) {
+          silenceTimer = setTimeout(() => {
+            finishAndDispatch();
+          }, 1200);
         }
       };
 
       recognition.onerror = (event: any) => {
+        if (silenceTimer) clearTimeout(silenceTimer);
         console.warn('SpeechRecognition error:', event.error);
         if (event.error === 'no-speech') {
-          options.onError('No detecté sonido. Puedes intentar hablar de nuevo o escribir tu mensaje.');
+          if (accumulatedFinal.trim()) {
+            finishAndDispatch();
+            return;
+          }
+          options.onError('No detecté sonido. Puedes hablar de nuevo o usar el teclado.');
         } else if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-          options.onError('El acceso al micrófono fue bloqueado. Revisa los permisos de tu navegador.');
+          options.onError('El acceso al micrófono fue bloqueado. Puedes escribirle por teclado.');
         } else if (event.error !== 'aborted') {
           options.onError(`Aviso de voz: ${event.error || 'intenta de nuevo'}`);
         }
       };
 
       recognition.onend = () => {
+        if (silenceTimer) clearTimeout(silenceTimer);
         this.recognitionInstance = null;
-        options.onEnd();
+        if (!hasDispatched && accumulatedFinal.trim()) {
+          finishAndDispatch();
+        } else {
+          options.onEnd();
+        }
       };
 
       this.recognitionInstance = recognition;

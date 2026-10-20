@@ -38,24 +38,24 @@ export const FullscreenBand: React.FC = () => {
   const currentMeta = EMOTIONS_CONFIG[currentEmotion];
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#EFECE6] flex flex-col justify-between p-4 sm:p-6 overflow-hidden select-none">
+    <div className="fixed inset-0 z-50 bg-[#FFF9F0] flex flex-col justify-between p-4 sm:p-6 overflow-hidden select-none">
       {/* Top Header */}
       <div className="flex items-center justify-between z-20">
-        <div className="flex items-center gap-2 bg-black/10 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-black/5">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-xs font-bold tracking-tight text-[#292A30]">
+        <div className="flex items-center gap-2 bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl border-2 border-[#FFD65A]/50 shadow-xs">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#72D6B1] animate-ping" />
+          <span className="text-xs font-black tracking-tight text-[#28243A]">
             Emoti-Band Wearable OS
           </span>
-          <span className="text-[10px] text-[#50545E]">· Sensor Activo</span>
+          <span className="text-[10px] font-bold text-[#1D6E50] bg-[#72D6B1]/20 px-2 py-0.5 rounded-full">BLE 5.3</span>
         </div>
 
         <button
           onClick={exitFullscreenDevice}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/10 hover:bg-black/20 backdrop-blur-md text-[#292A30] text-xs font-semibold transition-all active:scale-95 border border-black/5"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-white border-2 border-[#FFD65A]/50 hover:bg-[#FFF2DE] text-[#28243A] text-xs font-black transition-all hover:scale-105 active:scale-95 shadow-xs"
           title="Volver a la aplicación"
         >
-          <span>Salir</span>
-          <X className="w-3.5 h-3.5" />
+          <span>Volver a la app</span>
+          <X className="w-4 h-4" />
         </button>
       </div>
 

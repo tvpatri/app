@@ -17,17 +17,17 @@ export const EmotiAppView: React.FC = () => {
   const { emotiAppSubTab, setEmotiAppSubTab } = useEmoti();
 
   const subTabs = [
-    { id: 'home', label: 'Inicio', icon: Home },
-    { id: 'mood', label: 'Mood Tracker', icon: Smile },
-    { id: 'friends', label: 'Amigos', icon: Users },
-    { id: 'guide', label: 'Guía', icon: MessageSquare },
-    { id: 'progress', label: 'Progreso', icon: TrendingUp },
+    { id: 'home', label: 'Inicio', icon: Home, gradient: 'from-[#FFD65A] to-[#FF936F]' },
+    { id: 'mood', label: 'Mood Tracker', icon: Smile, gradient: 'from-[#72D6B1] to-[#79B9F2]' },
+    { id: 'friends', label: 'Amigos', icon: Users, gradient: 'from-[#FF80B5] to-[#FF936F]' },
+    { id: 'guide', label: 'Guía Diálogo', icon: MessageSquare, gradient: 'from-[#B69AF5] to-[#79B9F2]' },
+    { id: 'progress', label: 'Progreso', icon: TrendingUp, gradient: 'from-[#FF936F] to-[#FF80B5]' },
   ] as const;
 
   return (
-    <div className="space-y-5">
-      {/* App Internal Sub-Nav Pills */}
-      <div className="flex items-center gap-1.5 p-1 bg-white rounded-2xl border border-[#ECEDEF] shadow-xs overflow-x-auto">
+    <div className="space-y-5 animate-pop-in">
+      {/* App Internal Sub-Nav Pills with colorful gradients */}
+      <div className="flex items-center gap-1.5 p-1.5 bg-[#FFF2DE] rounded-2xl border-2 border-[#FFD65A]/50 shadow-inner overflow-x-auto">
         {subTabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = emotiAppSubTab === tab.id;
@@ -36,13 +36,13 @@ export const EmotiAppView: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => setEmotiAppSubTab(tab.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-black whitespace-nowrap transition-all ${
                 isActive
-                  ? 'bg-[#292A30] text-white shadow-xs'
-                  : 'text-[#50545E] hover:text-[#292A30] hover:bg-[#F8F7F4]'
+                  ? `bg-gradient-to-r ${tab.gradient} text-[#28243A] shadow-xs scale-102`
+                  : 'text-[#28243A]/70 hover:text-[#28243A] hover:bg-white/60'
               }`}
             >
-              <Icon className="w-3.5 h-3.5" />
+              <Icon className="w-4 h-4" />
               <span>{tab.label}</span>
             </button>
           );

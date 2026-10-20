@@ -15,13 +15,13 @@ import {
 } from 'lucide-react';
 
 interface AuthModalProps {
-  isOpen: boolean;
+  isOpen?: boolean;
   onClose: () => void;
   initialMode?: 'login' | 'register' | 'forgot';
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
-  isOpen,
+  isOpen = true,
   onClose,
   initialMode = 'login',
 }) => {

@@ -24,7 +24,7 @@ import { AuthModal } from '../auth/AuthModal';
 
 export const ProfileView: React.FC = () => {
   const { user, userProfile, updateUserProfile, logout, syncStatus, acceptedFriends } = useAuth();
-  const { botName, setBotName, currentEmotion, showToast } = useEmoti();
+  const { botName, setBotName, currentEmotion, showToast, triggerSparkBurst } = useEmoti();
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -36,7 +36,7 @@ export const ProfileView: React.FC = () => {
   const [moodVisibility, setMoodVisibility] = useState<MoodVisibility>(
     userProfile?.moodVisibility || 'friends'
   );
-  const [avatarBgInput, setAvatarBgInput] = useState(userProfile?.avatarBg || '#DCD5F5');
+  const [avatarBgInput, setAvatarBgInput] = useState(userProfile?.avatarBg || '#FFD65A');
   const [isSaving, setIsSaving] = useState(false);
 
   const currentMeta = EMOTIONS_CONFIG[currentEmotion];
@@ -57,6 +57,7 @@ export const ProfileView: React.FC = () => {
       });
       setBotName(botNameInput.trim() || 'Milo');
       setIsEditing(false);
+      triggerSparkBurst();
       showToast('Perfil y preferencias sincronizados en la nube.', 'success');
     } catch {
       showToast('Error al guardar perfil.', 'info');
@@ -65,25 +66,26 @@ export const ProfileView: React.FC = () => {
     }
   };
 
-  const avatarColorOptions = ['#DCD5F5', '#F5DFD3', '#D9E8DE', '#DCEAF4', '#FDE68A', '#E2E8F0'];
+  const avatarColorOptions = ['#FFD65A', '#72D6B1', '#FF936F', '#79B9F2', '#B69AF5', '#FF80B5'];
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-6 pb-24 animate-pop-in">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <span className="text-xs uppercase tracking-wider font-semibold text-[#4F4275] bg-[#DCD5F5]/60 px-2 py-0.5 rounded-md">
+          <span className="text-xs uppercase tracking-wider font-black text-[#58399E] bg-[#B69AF5]/25 border border-[#B69AF5]/40 px-3 py-1 rounded-xl shadow-xs">
             Cuenta & Sincronización
           </span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#292A30] tracking-tight mt-1">
-            Mi Perfil
+          <h1 className="text-2xl sm:text-3xl font-black text-[#28243A] tracking-tight mt-1.5 flex items-center gap-2">
+            <span>Mi Perfil EMOTI</span>
+            <span className="text-2xl animate-bounce">✨</span>
           </h1>
         </div>
 
         {user ? (
           <button
             onClick={() => logout()}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#D6D8DC] hover:bg-rose-50 hover:text-rose-600 text-xs font-semibold transition-all shadow-xs"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-white border-2 border-[#FFD65A]/50 hover:bg-rose-50 hover:text-rose-600 text-xs font-bold transition-all shadow-xs"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Cerrar sesión</span>
@@ -91,40 +93,40 @@ export const ProfileView: React.FC = () => {
         ) : (
           <button
             onClick={() => setIsAuthModalOpen(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#292A30] text-white hover:bg-black text-xs font-semibold shadow-xs"
+            className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-[#FFD65A] via-[#FF936F] to-[#FF80B5] text-[#28243A] text-xs font-black shadow-xs hover:scale-105 active:scale-95 transition-all"
           >
-            <LogIn className="w-3.5 h-3.5" />
+            <LogIn className="w-4 h-4" />
             <span>Iniciar sesión</span>
           </button>
         )}
       </div>
 
       {/* Main Profile Hero Card */}
-      <div className="bg-white rounded-3xl p-6 border border-[#ECEDEF] shadow-sm space-y-4">
+      <div className="bg-white rounded-3xl p-6 border-2 border-[#FFD65A]/50 shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center font-bold text-xl shadow-md border-2 border-white"
-              style={{ backgroundColor: userProfile?.avatarBg || '#DCD5F5', color: '#292A30' }}
+              className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl flex items-center justify-center font-black text-2xl shadow-md border-3 border-white"
+              style={{ backgroundColor: userProfile?.avatarBg || '#FFD65A', color: '#28243A' }}
             >
               {userProfile?.avatarInitials || (userProfile?.displayName || 'AL').slice(0, 2).toUpperCase()}
             </div>
 
-            <div className="space-y-0.5">
-              <h2 className="text-xl font-bold text-[#292A30]">
+            <div className="space-y-1">
+              <h2 className="text-xl sm:text-2xl font-black text-[#28243A]">
                 {userProfile?.displayName || 'Alex Morales'}
               </h2>
-              <p className="text-xs font-mono text-[#7A7E89] flex items-center gap-1">
+              <p className="text-xs font-mono font-bold text-[#FF936F] flex items-center gap-2">
                 <span>@{userProfile?.username || 'alexm'}</span>
                 <span>·</span>
-                <span className="text-[#50545E]">Emoti-Bot: <strong>{userProfile?.botName || botName}</strong></span>
+                <span className="text-[#28243A]/80 font-sans">Robot: <strong>{userProfile?.botName || botName}</strong></span>
               </p>
               <div className="pt-1 flex items-center gap-2">
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#F8F7F4] border border-[#ECEDEF] text-[#292A30]">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-[#FFF9F0] border border-[#FFD65A]/50 text-[#28243A]">
                   <span>{currentMeta.emoji}</span>
                   <span className="capitalize">{currentMeta.label}</span>
                 </span>
-                <span className="text-xs text-[#7A7E89]">
+                <span className="text-xs font-bold text-[#28243A]/70">
                   {acceptedFriends.length} {acceptedFriends.length === 1 ? 'amigo' : 'amigos'} en Mi Círculo
                 </span>
               </div>
@@ -139,11 +141,11 @@ export const ProfileView: React.FC = () => {
                   setUsernameInput(userProfile?.username || '');
                   setBotNameInput(userProfile?.botName || botName);
                   setMoodVisibility(userProfile?.moodVisibility || 'friends');
-                  setAvatarBgInput(userProfile?.avatarBg || '#DCD5F5');
+                  setAvatarBgInput(userProfile?.avatarBg || '#FFD65A');
                 }
                 setIsEditing(!isEditing);
               }}
-              className="px-4 py-2 rounded-xl bg-[#F8F7F4] hover:bg-[#ECEDEF] text-xs font-semibold text-[#292A30] border border-[#D6D8DC] transition-all self-start sm:self-auto"
+              className="px-4 py-2 rounded-2xl bg-[#FFF9F0] hover:bg-[#FFF2DE] text-xs font-black text-[#28243A] border-2 border-[#FFD65A]/50 transition-all self-start sm:self-auto hover:scale-103"
             >
               {isEditing ? 'Cancelar edición' : 'Editar perfil'}
             </button>
@@ -152,10 +154,10 @@ export const ProfileView: React.FC = () => {
 
         {/* Edit Profile Form */}
         {isEditing && (
-          <form onSubmit={handleSaveProfile} className="pt-4 border-t border-[#ECEDEF] space-y-3.5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <form onSubmit={handleSaveProfile} className="pt-4 border-t-2 border-[#FFD65A]/30 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>
-                <label className="text-[11px] font-semibold text-[#50545E] block mb-1">
+                <label className="text-xs font-black text-[#28243A] block mb-1">
                   Nombre visible
                 </label>
                 <input
@@ -163,12 +165,12 @@ export const ProfileView: React.FC = () => {
                   required
                   value={displayNameInput}
                   onChange={(e) => setDisplayNameInput(e.target.value)}
-                  className="w-full bg-[#F8F7F4] border border-[#D6D8DC] rounded-xl px-3 py-2 text-xs text-[#292A30] focus:ring-2 focus:ring-[#DCD5F5] outline-none"
+                  className="w-full bg-[#FFF9F0] border-2 border-[#FFD65A]/50 rounded-2xl px-4 py-2.5 text-xs text-[#28243A] font-bold focus:border-[#FF936F] outline-none"
                 />
               </div>
 
               <div>
-                <label className="text-[11px] font-semibold text-[#50545E] block mb-1">
+                <label className="text-xs font-black text-[#28243A] block mb-1">
                   Nombre de usuario (@handle)
                 </label>
                 <input
@@ -176,12 +178,12 @@ export const ProfileView: React.FC = () => {
                   required
                   value={usernameInput}
                   onChange={(e) => setUsernameInput(e.target.value)}
-                  className="w-full bg-[#F8F7F4] border border-[#D6D8DC] rounded-xl px-3 py-2 text-xs text-[#292A30] focus:ring-2 focus:ring-[#DCD5F5] outline-none"
+                  className="w-full bg-[#FFF9F0] border-2 border-[#FFD65A]/50 rounded-2xl px-4 py-2.5 text-xs text-[#28243A] font-bold focus:border-[#FF936F] outline-none"
                 />
               </div>
 
               <div>
-                <label className="text-[11px] font-semibold text-[#50545E] block mb-1">
+                <label className="text-xs font-black text-[#28243A] block mb-1">
                   Nombre de tu Emoti-Bot
                 </label>
                 <input
@@ -189,22 +191,22 @@ export const ProfileView: React.FC = () => {
                   required
                   value={botNameInput}
                   onChange={(e) => setBotNameInput(e.target.value)}
-                  className="w-full bg-[#F8F7F4] border border-[#D6D8DC] rounded-xl px-3 py-2 text-xs text-[#292A30] focus:ring-2 focus:ring-[#DCD5F5] outline-none"
+                  className="w-full bg-[#FFF9F0] border-2 border-[#FFD65A]/50 rounded-2xl px-4 py-2.5 text-xs text-[#28243A] font-bold focus:border-[#FF936F] outline-none"
                 />
               </div>
 
               <div>
-                <label className="text-[11px] font-semibold text-[#50545E] block mb-1">
+                <label className="text-xs font-black text-[#28243A] block mb-1">
                   Color de avatar
                 </label>
-                <div className="flex items-center gap-2 pt-0.5">
+                <div className="flex items-center gap-2 pt-1">
                   {avatarColorOptions.map((c) => (
                     <button
                       key={c}
                       type="button"
                       onClick={() => setAvatarBgInput(c)}
-                      className={`w-7 h-7 rounded-lg transition-transform ${
-                        avatarBgInput === c ? 'ring-2 ring-[#292A30] scale-110' : 'hover:scale-105'
+                      className={`w-8 h-8 rounded-xl transition-transform ${
+                        avatarBgInput === c ? 'ring-3 ring-[#28243A] scale-115' : 'hover:scale-105'
                       }`}
                       style={{ backgroundColor: c }}
                     />
@@ -214,114 +216,73 @@ export const ProfileView: React.FC = () => {
             </div>
 
             {/* Mood Visibility Setting */}
-            <div className="space-y-1.5 pt-2">
-              <label className="text-[11px] font-semibold text-[#50545E] block">
-                Privacidad de tu estado de ánimo:
+            <div className="space-y-2 pt-2">
+              <label className="text-xs font-black text-[#28243A] block">
+                Privacidad de tu estado emocional:
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => setMoodVisibility('friends')}
-                  className={`p-3 rounded-xl border text-left flex items-start gap-2.5 transition-all ${
+                  className={`flex-1 py-2.5 px-3 rounded-2xl text-xs font-black border-2 transition-all flex items-center justify-center gap-1.5 ${
                     moodVisibility === 'friends'
-                      ? 'bg-[#DCD5F5]/30 border-[#4F4275] ring-1 ring-[#4F4275]'
-                      : 'bg-[#F8F7F4] border-[#ECEDEF] text-[#50545E]'
+                      ? 'bg-[#72D6B1]/20 border-[#72D6B1] text-[#1D6E50]'
+                      : 'bg-[#FFF9F0] border-[#FFD65A]/40 text-[#28243A]/70'
                   }`}
                 >
-                  <Eye className="w-4 h-4 text-[#4F4275] shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold text-xs text-[#292A30] block">Solo amigos</span>
-                    <span className="text-[10px] text-[#50545E]">Tus amigos confirmados verán tu ánimo actual en Mi Círculo.</span>
-                  </div>
+                  <Eye className="w-4 h-4" />
+                  <span>Visible para amigos</span>
                 </button>
-
                 <button
                   type="button"
                   onClick={() => setMoodVisibility('nobody')}
-                  className={`p-3 rounded-xl border text-left flex items-start gap-2.5 transition-all ${
+                  className={`flex-1 py-2.5 px-3 rounded-2xl text-xs font-black border-2 transition-all flex items-center justify-center gap-1.5 ${
                     moodVisibility === 'nobody'
-                      ? 'bg-[#DCD5F5]/30 border-[#4F4275] ring-1 ring-[#4F4275]'
-                      : 'bg-[#F8F7F4] border-[#ECEDEF] text-[#50545E]'
+                      ? 'bg-[#FF80B5]/20 border-[#FF80B5] text-[#A31652]'
+                      : 'bg-[#FFF9F0] border-[#FFD65A]/40 text-[#28243A]/70'
                   }`}
                 >
-                  <EyeOff className="w-4 h-4 text-gray-500 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold text-xs text-[#292A30] block">Nadie (Privado)</span>
-                    <span className="text-[10px] text-[#50545E]">Tu emoción se mantendrá 100% privada en tus dispositivos.</span>
-                  </div>
+                  <EyeOff className="w-4 h-4" />
+                  <span>Solo para mí (Privado)</span>
                 </button>
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setIsEditing(false)}
-                className="px-4 py-2 text-xs font-semibold text-[#50545E] hover:bg-[#ECEDEF] rounded-xl"
-              >
-                Cancelar
-              </button>
+            <div className="pt-2 flex justify-end">
               <button
                 type="submit"
                 disabled={isSaving}
-                className="px-5 py-2 bg-[#292A30] hover:bg-black text-white text-xs font-semibold rounded-xl shadow-xs flex items-center gap-1.5"
+                className="px-6 py-2.5 bg-gradient-to-r from-[#FFD65A] via-[#FF936F] to-[#FF80B5] text-[#28243A] font-black text-xs rounded-2xl shadow-xs hover:scale-103 active:scale-95 transition-all"
               >
-                <Check className="w-3.5 h-3.5" />
-                <span>Guardar cambios</span>
+                {isSaving ? 'Guardando...' : 'Guardar Cambios'}
               </button>
             </div>
           </form>
         )}
       </div>
 
-      {/* REAL-TIME MULTI-DEVICE SYNCHRONIZATION STATUS CARD */}
-      <div className="bg-white rounded-3xl p-6 border border-[#ECEDEF] shadow-sm space-y-4">
+      {/* Cloud & Hardware Sync Status Card */}
+      <div className="bg-white rounded-3xl p-5 sm:p-6 border-2 border-[#FFD65A]/50 shadow-sm space-y-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200">
-              <Radio className="w-5 h-5 animate-pulse" />
-            </div>
-            <div>
-              <h3 className="font-bold text-sm text-[#292A30]">
-                Sincronización multi-dispositivo en tiempo real
-              </h3>
-              <p className="text-xs text-[#50545E]">
-                Cloud Firestore & Firebase Auth activados
-              </p>
-            </div>
+          <div className="flex items-center gap-2">
+            <Radio className="w-5 h-5 text-[#72D6B1] animate-pulse" />
+            <h3 className="font-black text-base text-[#28243A]">
+              Sincronización en Tiempo Real
+            </h3>
           </div>
-
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-            <span>
-              {syncStatus === 'synced' ? 'Sincronizado' : syncStatus === 'syncing' ? 'Sincronizando...' : 'Sin conexión'}
-            </span>
-          </div>
+          <span className="text-xs font-black text-[#1D6E50] bg-[#72D6B1]/20 px-3 py-1 rounded-full border border-[#72D6B1]/40">
+            Cloud Firestore Activo
+          </span>
         </div>
 
-        <div className="p-4 bg-[#F8F7F4] rounded-2xl border border-[#ECEDEF] text-xs text-[#50545E] space-y-2.5 leading-relaxed">
-          <p>
-            Esta cuenta está sincronizada con <strong>Cloud Firestore</strong> mediante suscripciones en vivo (<code>onSnapshot</code>).
-          </p>
-          <div className="bg-white p-3 rounded-xl border border-[#ECEDEF] space-y-2 text-[11px]">
-            <div className="flex items-start gap-2">
-              <Smartphone className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
-              <span>
-                <strong>Prueba el caso multi-dispositivo:</strong> Abre esta misma aplicación en otro teléfono o pestaña con la misma cuenta. Activa el Emoti-Bot a pantalla completa en la primera pantalla y cambia tu emoción en la segunda: el robot cambiará su color y rostro automáticamente sin salir del modo inmersivo.
-              </span>
-            </div>
-          </div>
-          <p className="text-[11px] text-[#7A7E89]">
-            Los campos sincronizados incluyen: estado de ánimo actual, carita del robot, color de fondo, nombre del Emoti-Bot y pulsera Emoti-Band.
-          </p>
-        </div>
+        <p className="text-xs text-[#28243A]/70 font-medium leading-relaxed">
+          Tus emociones, estados de ánimo, respuestas del Emoti-Bot y pulsos de la pulsera Emoti-Band se sincronizan automáticamente entre todas las instancias y pantallas que tengas abiertas con tu cuenta.
+        </p>
       </div>
 
-      {/* Auth Modal */}
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-      />
+      {isAuthModalOpen && (
+        <AuthModal onClose={() => setIsAuthModalOpen(false)} />
+      )}
     </div>
   );
 };

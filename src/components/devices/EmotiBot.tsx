@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useEmoti } from '../../context/EmotiContext';
 import { BotExpression } from '../../types';
+import { EMOTIONS_CONFIG } from '../../data/emotionsData';
 import { 
   Sparkles, 
   Hand, 
@@ -11,8 +12,12 @@ import {
   HelpCircle, 
   ShieldCheck, 
   Volume2,
-  Maximize2
+  Maximize2,
+  Radio,
+  Zap,
+  Bot
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 export const EmotiBot: React.FC = () => {
   const {
@@ -26,11 +31,22 @@ export const EmotiBot: React.FC = () => {
     syncBotWithEmotion,
     enterFullscreenDevice,
     devices,
+    currentEmotion,
+    triggerSparkBurst
   } = useEmoti();
 
-  const [isBlinking, setIsBlinking] = useState(false);
+  const { userProfile, user } = useAuth();
+  const effectiveUserName =
+    userProfile?.displayName?.trim() ||
+    user?.displayName?.trim() ||
+    (userProfile?.username ? `@${userProfile.username}` : '') ||
+    'amigo';
+  const effectiveBotName = userProfile?.botName?.trim() || botName || 'Milo';
 
-  // Blinking loop every 4-6 seconds
+  const [isBlinking, setIsBlinking] = useState(false);
+  const currentEmotionMeta = EMOTIONS_CONFIG[currentEmotion];
+
+  // Blinking loop every 4-5 seconds
   useEffect(() => {
     const blinkInterval = setInterval(() => {
       setIsBlinking(true);
@@ -40,16 +56,27 @@ export const EmotiBot: React.FC = () => {
     return () => clearInterval(blinkInterval);
   }, []);
 
-  // Render SVG Robot Eyes based on expression and blinking
+  const handleTouchAction = () => {
+    touchBot();
+    triggerSparkBurst();
+  };
+
+  // Render SVG Robot Eyes with vibrant cyberpunk / friendly aesthetic
   const renderEyes = () => {
-    const eyeColor = '#A3E8FF';
-    const secondaryColor = '#80D0F5';
+    const eyeColor = currentEmotionMeta ? currentEmotionMeta.accentHex : '#79B9F2';
+    const secondaryColor = '#FFF';
 
     if (isBlinking) {
       return (
         <div className="flex items-center justify-center gap-12 w-full h-full">
-          <div className="w-14 h-1.5 bg-[#A3E8FF] rounded-full shadow-[0_0_12px_#A3E8FF]" />
-          <div className="w-14 h-1.5 bg-[#A3E8FF] rounded-full shadow-[0_0_12px_#A3E8FF]" />
+          <div 
+            className="w-16 h-2 rounded-full transition-all duration-150" 
+            style={{ backgroundColor: eyeColor, boxShadow: `0 0 16px ${eyeColor}` }}
+          />
+          <div 
+            className="w-16 h-2 rounded-full transition-all duration-150" 
+            style={{ backgroundColor: eyeColor, boxShadow: `0 0 16px ${eyeColor}` }}
+          />
         </div>
       );
     }
@@ -57,7 +84,7 @@ export const EmotiBot: React.FC = () => {
     switch (botExpression) {
       case 'HAPPY':
         return (
-          <div className="flex flex-col items-center justify-center w-full h-full gap-3">
+          <div className="flex flex-col items-center justify-center w-full h-full gap-3 animate-soft-float">
             <div className="flex items-center justify-center gap-10">
               <svg className="w-16 h-14" viewBox="0 0 60 50">
                 <path
@@ -66,9 +93,9 @@ export const EmotiBot: React.FC = () => {
                   stroke={eyeColor}
                   strokeWidth="8"
                   strokeLinecap="round"
-                  className="filter drop-shadow-[0_0_8px_#A3E8FF]"
+                  style={{ filter: `drop-shadow(0 0 10px ${eyeColor})` }}
                 />
-                <circle cx="42" cy="18" r="3" fill="#FFF" />
+                <circle cx="42" cy="18" r="3.5" fill="#FFF" />
               </svg>
               <svg className="w-16 h-14" viewBox="0 0 60 50">
                 <path
@@ -77,16 +104,17 @@ export const EmotiBot: React.FC = () => {
                   stroke={eyeColor}
                   strokeWidth="8"
                   strokeLinecap="round"
-                  className="filter drop-shadow-[0_0_8px_#A3E8FF]"
+                  style={{ filter: `drop-shadow(0 0 10px ${eyeColor})` }}
                 />
-                <circle cx="42" cy="18" r="3" fill="#FFF" />
+                <circle cx="42" cy="18" r="3.5" fill="#FFF" />
               </svg>
             </div>
-            <svg className="w-12 h-6" viewBox="0 0 40 20">
+            {/* Cute robot smile */}
+            <svg className="w-14 h-7" viewBox="0 0 40 20">
               <path
                 d="M 10 8 Q 20 18 30 8"
                 fill="none"
-                stroke={secondaryColor}
+                stroke={eyeColor}
                 strokeWidth="4"
                 strokeLinecap="round"
               />
@@ -105,7 +133,7 @@ export const EmotiBot: React.FC = () => {
                   stroke={eyeColor}
                   strokeWidth="7"
                   strokeLinecap="round"
-                  className="filter drop-shadow-[0_0_8px_#A3E8FF]"
+                  style={{ filter: `drop-shadow(0 0 10px ${eyeColor})` }}
                 />
               </svg>
               <svg className="w-16 h-12" viewBox="0 0 60 40">
@@ -115,29 +143,35 @@ export const EmotiBot: React.FC = () => {
                   stroke={eyeColor}
                   strokeWidth="7"
                   strokeLinecap="round"
-                  className="filter drop-shadow-[0_0_8px_#A3E8FF]"
+                  style={{ filter: `drop-shadow(0 0 10px ${eyeColor})` }}
                 />
               </svg>
             </div>
-            <div className="w-8 h-1 bg-[#80D0F5] rounded-full opacity-80" />
+            <div className="w-10 h-1.5 rounded-full opacity-80" style={{ backgroundColor: eyeColor }} />
           </div>
         );
 
       case 'EXCITED':
         return (
-          <div className="flex flex-col items-center justify-center w-full h-full gap-3">
+          <div className="flex flex-col items-center justify-center w-full h-full gap-3 animate-pulse">
             <div className="flex items-center justify-center gap-10">
-              <div className="w-14 h-14 rounded-full border-6 border-[#A3E8FF] flex items-center justify-center shadow-[0_0_12px_#A3E8FF] relative animate-pulse">
-                <div className="w-6 h-6 bg-white rounded-full shadow-[0_0_8px_#FFF]" />
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-white" />
+              <div 
+                className="w-16 h-16 rounded-full border-6 flex items-center justify-center relative"
+                style={{ borderColor: eyeColor, boxShadow: `0 0 20px ${eyeColor}` }}
+              >
+                <div className="w-7 h-7 bg-white rounded-full shadow-[0_0_10px_#FFF]" />
+                <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-white" />
               </div>
-              <div className="w-14 h-14 rounded-full border-6 border-[#A3E8FF] flex items-center justify-center shadow-[0_0_12px_#A3E8FF] relative animate-pulse">
-                <div className="w-6 h-6 bg-white rounded-full shadow-[0_0_8px_#FFF]" />
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-white" />
+              <div 
+                className="w-16 h-16 rounded-full border-6 flex items-center justify-center relative"
+                style={{ borderColor: eyeColor, boxShadow: `0 0 20px ${eyeColor}` }}
+              >
+                <div className="w-7 h-7 bg-white rounded-full shadow-[0_0_10px_#FFF]" />
+                <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-white" />
               </div>
             </div>
-            <svg className="w-14 h-7" viewBox="0 0 40 20">
-              <path d="M 8 6 Q 20 22 32 6 Z" fill="#A3E8FF" opacity="0.9" />
+            <svg className="w-16 h-8" viewBox="0 0 40 20">
+              <path d="M 8 6 Q 20 22 32 6 Z" fill={eyeColor} opacity="0.95" />
             </svg>
           </div>
         );
@@ -153,7 +187,7 @@ export const EmotiBot: React.FC = () => {
                   stroke={eyeColor}
                   strokeWidth="8"
                   strokeLinecap="round"
-                  className="filter drop-shadow-[0_0_8px_#A3E8FF]"
+                  style={{ filter: `drop-shadow(0 0 10px ${eyeColor})` }}
                 />
                 <circle cx="28" cy="30" r="3" fill="#FFF" />
               </svg>
@@ -164,12 +198,12 @@ export const EmotiBot: React.FC = () => {
                   stroke={eyeColor}
                   strokeWidth="8"
                   strokeLinecap="round"
-                  className="filter drop-shadow-[0_0_8px_#A3E8FF]"
+                  style={{ filter: `drop-shadow(0 0 10px ${eyeColor})` }}
                 />
                 <circle cx="32" cy="30" r="3" fill="#FFF" />
               </svg>
             </div>
-            <div className="w-6 h-1 bg-[#80D0F5] rounded-full opacity-70" />
+            <div className="w-8 h-1 rounded-full opacity-70" style={{ backgroundColor: eyeColor }} />
           </div>
         );
 
@@ -177,19 +211,25 @@ export const EmotiBot: React.FC = () => {
         return (
           <div className="flex flex-col items-center justify-center w-full h-full gap-3">
             <div className="flex items-center justify-center gap-10">
-              <div className="w-12 h-12 rounded-full border-5 border-[#A3E8FF] flex items-center justify-center shadow-[0_0_10px_#A3E8FF] transform -rotate-12">
-                <div className="w-5 h-5 bg-[#A3E8FF] rounded-full translate-x-1" />
+              <div 
+                className="w-14 h-14 rounded-full border-5 flex items-center justify-center transform -rotate-12"
+                style={{ borderColor: eyeColor, boxShadow: `0 0 14px ${eyeColor}` }}
+              >
+                <div className="w-6 h-6 rounded-full translate-x-1" style={{ backgroundColor: eyeColor }} />
               </div>
-              <div className="w-12 h-12 rounded-full border-5 border-[#A3E8FF] flex items-center justify-center shadow-[0_0_10px_#A3E8FF] transform rotate-12">
-                <div className="w-5 h-5 bg-[#A3E8FF] rounded-full -translate-x-1" />
+              <div 
+                className="w-14 h-14 rounded-full border-5 flex items-center justify-center transform rotate-12"
+                style={{ borderColor: eyeColor, boxShadow: `0 0 14px ${eyeColor}` }}
+              >
+                <div className="w-6 h-6 rounded-full -translate-x-1" style={{ backgroundColor: eyeColor }} />
               </div>
             </div>
-            <svg className="w-12 h-5" viewBox="0 0 40 16">
+            <svg className="w-14 h-6" viewBox="0 0 40 16">
               <path
                 d="M 6 8 Q 14 3 20 8 T 34 8"
                 fill="none"
-                stroke={secondaryColor}
-                strokeWidth="3.5"
+                stroke={eyeColor}
+                strokeWidth="4"
                 strokeLinecap="round"
               />
             </svg>
@@ -200,14 +240,20 @@ export const EmotiBot: React.FC = () => {
         return (
           <div className="flex flex-col items-center justify-center w-full h-full gap-3">
             <div className="flex items-center justify-center gap-10">
-              <div className="w-14 h-14 rounded-full border-6 border-[#A3E8FF] flex items-center justify-center shadow-[0_0_10px_#A3E8FF] transform -rotate-12">
-                <div className="w-5 h-5 bg-[#A3E8FF] rounded-full translate-x-1 -translate-y-1" />
+              <div 
+                className="w-16 h-16 rounded-full border-6 flex items-center justify-center transform -rotate-12"
+                style={{ borderColor: eyeColor, boxShadow: `0 0 14px ${eyeColor}` }}
+              >
+                <div className="w-6 h-6 rounded-full translate-x-1 -translate-y-1" style={{ backgroundColor: eyeColor }} />
               </div>
-              <div className="w-12 h-12 rounded-full border-5 border-[#A3E8FF] flex items-center justify-center shadow-[0_0_10px_#A3E8FF] translate-y-1">
-                <div className="w-4 h-4 bg-[#A3E8FF] rounded-full translate-x-1 -translate-y-1" />
+              <div 
+                className="w-13 h-13 rounded-full border-5 flex items-center justify-center translate-y-1"
+                style={{ borderColor: eyeColor, boxShadow: `0 0 12px ${eyeColor}` }}
+              >
+                <div className="w-4 h-4 rounded-full translate-x-1 -translate-y-1" style={{ backgroundColor: eyeColor }} />
               </div>
             </div>
-            <div className="w-4 h-4 rounded-full border-2 border-[#80D0F5] opacity-80" />
+            <div className="w-5 h-5 rounded-full border-2 opacity-80 animate-spin" style={{ borderColor: eyeColor }} />
           </div>
         );
 
@@ -216,23 +262,29 @@ export const EmotiBot: React.FC = () => {
         return (
           <div className="flex flex-col items-center justify-center w-full h-full gap-3">
             <div className="flex items-center justify-center gap-10">
-              <div className="w-14 h-14 rounded-full border-6 border-[#A3E8FF] flex items-center justify-center shadow-[0_0_12px_#A3E8FF] relative">
-                <div className="w-5 h-5 bg-white rounded-full shadow-[0_0_8px_#FFF]" />
-                <span className="absolute -top-1 right-1 w-2 h-2 rounded-full bg-white opacity-80" />
+              <div 
+                className="w-16 h-16 rounded-full border-6 flex items-center justify-center relative"
+                style={{ borderColor: eyeColor, boxShadow: `0 0 16px ${eyeColor}` }}
+              >
+                <div className="w-6 h-6 bg-white rounded-full shadow-[0_0_8px_#FFF]" />
+                <span className="absolute -top-1 right-1 w-2.5 h-2.5 rounded-full bg-white opacity-90" />
               </div>
-              <div className="w-14 h-14 rounded-full border-6 border-[#A3E8FF] flex items-center justify-center shadow-[0_0_12px_#A3E8FF] relative">
-                <div className="w-5 h-5 bg-white rounded-full shadow-[0_0_8px_#FFF]" />
-                <span className="absolute -top-1 right-1 w-2 h-2 rounded-full bg-white opacity-80" />
+              <div 
+                className="w-16 h-16 rounded-full border-6 flex items-center justify-center relative"
+                style={{ borderColor: eyeColor, boxShadow: `0 0 16px ${eyeColor}` }}
+              >
+                <div className="w-6 h-6 bg-white rounded-full shadow-[0_0_8px_#FFF]" />
+                <span className="absolute -top-1 right-1 w-2.5 h-2.5 rounded-full bg-white opacity-90" />
               </div>
             </div>
-            <svg className="w-10 h-5" viewBox="0 0 40 18">
+            <svg className="w-12 h-6" viewBox="0 0 40 18">
               <path
                 d="M 8 6 Q 20 16 32 6"
                 fill="none"
-                stroke="#A3E8FF"
+                stroke={eyeColor}
                 strokeWidth="4"
                 strokeLinecap="round"
-                className="filter drop-shadow-[0_0_6px_#A3E8FF]"
+                style={{ filter: `drop-shadow(0 0 8px ${eyeColor})` }}
               />
             </svg>
           </div>
@@ -241,59 +293,66 @@ export const EmotiBot: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded-3xl p-6 border border-[#ECEDEF] shadow-sm relative overflow-hidden">
+    <div className="bg-white rounded-3xl p-6 border-2 border-[#FFD65A]/50 shadow-sm relative overflow-hidden space-y-5 animate-pop-in">
       {/* Device Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="font-bold text-base text-[#292A30]">
-              {botName}
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#79B9F2] to-[#B69AF5] text-white flex items-center justify-center font-black shadow-xs">
+              <Bot className="w-5 h-5" />
+            </div>
+            <h3 className="font-black text-base text-[#28243A]">
+              {effectiveBotName}
             </h3>
-            <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-[#DCD5F5]/60 text-[#4F4275]">
-              Robot Compañero
+            <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-[#B69AF5]/25 text-[#58399E] border border-[#B69AF5]/40">
+              Compañero IA
             </span>
           </div>
-          <p className="text-xs text-[#50545E]">
-            Pantalla circular OLED · 7 expresiones expresivas sincronizadas
+          <p className="text-xs text-[#28243A]/70 font-medium mt-0.5">
+            Robot empático con IA generativa · Atento a {effectiveUserName}
           </p>
         </div>
 
         <button
           onClick={() => enterFullscreenDevice('bot')}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#292A30] text-white hover:bg-black text-xs font-semibold shadow-xs transition-transform active:scale-95"
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-[#28243A] text-white hover:bg-black text-xs font-black shadow-xs transition-all hover:scale-105 active:scale-95"
           title="Convertir pantalla del celular en Emoti-Bot"
         >
-          <Maximize2 className="w-3.5 h-3.5 text-[#8BE9FD]" />
+          <Maximize2 className="w-3.5 h-3.5 text-[#FFD65A]" />
           <span>Pantalla completa</span>
         </button>
       </div>
 
-      {/* Main Physical Robot Body Simulation */}
+      {/* Main Physical Robot Body Simulation with Dynamic Halo Glow */}
       <div className="flex flex-col items-center justify-center py-2">
         <div
-          onClick={touchBot}
-          className={`relative group cursor-pointer w-64 h-64 sm:w-72 sm:h-72 rounded-[3.5rem] bg-gradient-to-b from-[#F9F9F8] to-[#E9ECEF] p-4 shadow-[0_15px_35px_-10px_rgba(41,42,48,0.15),0_0_0_1px_rgba(255,255,255,0.8)_inset] transition-all duration-300 hover:scale-[1.01] ${
-            isBotPetted ? 'ring-4 ring-[#DCD5F5] ring-offset-2' : ''
+          onClick={handleTouchAction}
+          className={`relative group cursor-pointer w-64 h-64 sm:w-72 sm:h-72 rounded-[3.8rem] p-4.5 transition-all duration-300 hover:scale-102 ${
+            isBotPetted ? 'scale-105 ring-4 ring-[#FF80B5] ring-offset-4' : ''
           }`}
+          style={{
+            background: `radial-gradient(circle at 50% 30%, ${currentEmotionMeta.accentHex}40, #28243A)`,
+            boxShadow: `0 20px 45px -10px ${currentEmotionMeta.accentHex}60, 0 0 0 3px ${currentEmotionMeta.accentHex}70 inset`
+          }}
           title={`Toca a ${botName} para interactuar`}
         >
           {/* Subtle speaker perforations top */}
-          <div className="absolute top-2.5 left-1/2 -translate-x-1/2 flex gap-1 opacity-25">
-            <span className="w-1 h-1 rounded-full bg-gray-600" />
-            <span className="w-1 h-1 rounded-full bg-gray-600" />
-            <span className="w-1 h-1 rounded-full bg-gray-600" />
-            <span className="w-1 h-1 rounded-full bg-gray-600" />
-            <span className="w-1 h-1 rounded-full bg-gray-600" />
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 flex gap-1.5 opacity-40">
+            <span className="w-1.5 h-1.5 rounded-full bg-white" />
+            <span className="w-1.5 h-1.5 rounded-full bg-white" />
+            <span className="w-1.5 h-1.5 rounded-full bg-white" />
+            <span className="w-1.5 h-1.5 rounded-full bg-white" />
           </div>
 
           {/* Deep dark circular OLED screen bezel */}
-          <div className="w-full h-full rounded-[2.8rem] bg-[#141518] p-3 shadow-[inset_0_4px_12px_rgba(0,0,0,0.8),0_1px_2px_rgba(255,255,255,0.2)] flex flex-col items-center justify-center relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-white/10 to-transparent pointer-events-none rounded-t-[2.8rem]" />
+          <div className="w-full h-full rounded-[3rem] bg-[#141518] p-3 shadow-[inset_0_4px_16px_rgba(0,0,0,0.9),0_2px_4px_rgba(255,255,255,0.2)] flex flex-col items-center justify-center relative overflow-hidden">
+            {/* Screen Glass Reflection */}
+            <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-white/15 to-transparent pointer-events-none rounded-t-[3rem]" />
 
             {/* Petting heart animation */}
             {isBotPetted && (
-              <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none bg-black/30 backdrop-blur-[1px]">
-                <Heart className="w-16 h-16 text-rose-400 fill-rose-400 animate-ping opacity-75" />
+              <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none bg-black/40 backdrop-blur-xs animate-pop-in">
+                <Heart className="w-20 h-20 text-[#FF80B5] fill-[#FF80B5] animate-ping opacity-90" />
               </div>
             )}
 
@@ -303,77 +362,87 @@ export const EmotiBot: React.FC = () => {
             </div>
 
             {/* Bottom OLED status bar */}
-            <div className="absolute bottom-3 text-[10px] font-mono text-[#50545E] flex items-center gap-2 tracking-widest uppercase">
-              <span>{botName}·OS</span>
+            <div className="absolute bottom-3 text-[10px] font-mono text-gray-400 flex items-center gap-2 tracking-widest uppercase">
+              <span>{effectiveBotName}·OS</span>
               <span>·</span>
-              <span className="text-[#A3E8FF]">{botExpression}</span>
+              <span style={{ color: currentEmotionMeta.accentHex }}>{botExpression}</span>
             </div>
           </div>
         </div>
 
-        {/* Dynamic Contextual Robot Speech Bubble */}
-        <div className="mt-5 w-full max-w-md bg-[#F8F7F4] rounded-2xl p-4 border border-[#ECEDEF] relative">
-          <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-[#F8F7F4] border-t border-l border-[#ECEDEF] transform rotate-45" />
+        {/* Dynamic Contextual Robot Speech Bubble with colorful frame */}
+        <div 
+          className="mt-5 w-full max-w-md bg-[#FFF9F0] rounded-3xl p-4 border-2 shadow-xs relative"
+          style={{ borderColor: currentEmotionMeta.accentHex }}
+        >
+          <div 
+            className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-[#FFF9F0] border-t-2 border-l-2 transform rotate-45"
+            style={{ borderColor: currentEmotionMeta.accentHex }}
+          />
           <div className="flex items-start gap-3">
-            <div className="w-7 h-7 rounded-full bg-[#DCD5F5] text-[#4F4275] flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">
+            <div 
+              className="w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 text-sm font-black mt-0.5 shadow-xs"
+              style={{ backgroundColor: `${currentEmotionMeta.accentHex}40`, color: '#28243A' }}
+            >
               🤖
             </div>
             <div className="flex-1">
-              <p className="text-xs sm:text-sm font-medium text-[#292A30] leading-snug">
+              <p className="text-xs sm:text-sm font-bold text-[#28243A] leading-snug">
                 "{botMessage}"
               </p>
-              <div className="mt-1 flex items-center gap-2 text-[11px] text-[#7A7E89]">
+              <div className="mt-1 flex items-center gap-2 text-[11px] text-[#28243A]/70 font-semibold">
                 <span>Tacto capacitivo activo</span>
                 <span>·</span>
-                <span>Carita: <strong className="text-[#292A30]">{botExpression}</strong></span>
+                <span>Carita: <strong className="text-[#28243A]">{botExpression}</strong></span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Interactive Controls */}
-      <div className="mt-4 pt-4 border-t border-[#ECEDEF] space-y-3">
-        <div className="text-xs font-semibold text-[#50545E]">
-          Controles interactivos de simulación:
+      {/* Interactive Simulation Controls */}
+      <div className="pt-2 border-t border-[#FFD65A]/30 space-y-3">
+        <div className="text-xs font-black text-[#28243A] flex items-center gap-2">
+          <Sparkles className="w-3.5 h-3.5 text-[#FF936F]" />
+          <span>Controles de Personalidad & Estados:</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
           <button
             onClick={cycleBotExpression}
-            className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-[#ECEDEF] hover:bg-[#DCD5F5]/60 text-[#292A30] text-xs font-semibold transition-all hover:shadow-xs active:scale-98"
+            className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl bg-[#FFF9F0] hover:bg-[#FFF2DE] border-2 border-[#FFD65A]/50 text-[#28243A] text-xs font-black transition-all hover:scale-102 active:scale-95 shadow-2xs"
           >
-            <RefreshCw className="w-3.5 h-3.5 text-[#4F4275]" />
-            <span>Cambiar carita</span>
+            <RefreshCw className="w-3.5 h-3.5 text-[#FF936F]" />
+            <span>Alternar carita</span>
           </button>
 
           <button
-            onClick={touchBot}
-            className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-[#F5DFD3]/60 hover:bg-[#F5DFD3] text-[#8C5835] text-xs font-semibold transition-all hover:shadow-xs active:scale-98"
+            onClick={handleTouchAction}
+            className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl bg-[#FF80B5]/20 hover:bg-[#FF80B5]/30 border-2 border-[#FF80B5]/50 text-[#A31652] text-xs font-black transition-all hover:scale-102 active:scale-95 shadow-2xs"
           >
-            <Hand className="w-3.5 h-3.5" />
-            <span>Tocar a {botName}</span>
+            <Heart className="w-3.5 h-3.5 fill-[#A31652]" />
+            <span>Acariciar robot</span>
           </button>
 
           <button
             onClick={syncBotWithEmotion}
-            className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-[#D9E8DE]/60 hover:bg-[#D9E8DE] text-[#2D5A3C] text-xs font-semibold transition-all hover:shadow-xs active:scale-98"
+            className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl bg-[#72D6B1]/20 hover:bg-[#72D6B1]/30 border-2 border-[#72D6B1]/50 text-[#1D6E50] text-xs font-black transition-all hover:scale-102 active:scale-95 shadow-2xs"
           >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Sincronizar emoción</span>
+            <Zap className="w-3.5 h-3.5 fill-[#1D6E50]" />
+            <span>Sincronizar hoy</span>
           </button>
         </div>
 
         {/* 7 Facial Expression Quick Selectors */}
-        <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
+        <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
           {(['HAPPY', 'CALM', 'EXCITED', 'SAD', 'STRESSED', 'SUPPORTIVE', 'THINKING'] as BotExpression[]).map((exp) => (
             <button
               key={exp}
               onClick={() => setBotExpression(exp)}
-              className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all ${
+              className={`px-3 py-1 rounded-xl text-xs font-black transition-all ${
                 botExpression === exp
-                  ? 'bg-[#292A30] text-white shadow-xs'
-                  : 'bg-[#F8F7F4] text-[#50545E] hover:bg-[#ECEDEF]'
+                  ? 'bg-gradient-to-r from-[#FFD65A] to-[#FF936F] text-[#28243A] shadow-xs scale-105'
+                  : 'bg-[#FFF9F0] text-[#28243A]/70 border border-[#FFD65A]/40 hover:bg-[#FFF2DE]'
               }`}
             >
               {exp}

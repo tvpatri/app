@@ -88,6 +88,7 @@ interface EmotiContextType {
   sparksHistory: EnergySparkEvent[];
   sendEnergySpark: (friendId: string, message: string, friendName?: string) => void;
   sparkBurstActive: boolean;
+  triggerSparkBurst: () => void;
 
   // Reflections / Progress
   reflections: ReflectionEntry[];
@@ -419,12 +420,13 @@ export const EmotiProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   // Bot Interactions
   const touchBot = () => {
     setIsBotPetted(true);
+    const currentUserName = userProfile?.displayName?.trim() || userProfile?.username?.trim() || 'amigo';
     const friendlyQuotes = [
-      `¡Hola! Soy ${botName}, qué lindo sentir tu contacto 💖`,
-      '¡Me alegra acompañarte hoy! Respira conmigo.',
-      'Siento tu presencia. Juntos cuidamos tu bienestar ✨',
-      '¡Gracias por estar aquí! Eres valioso y capaz.',
-      'Estoy escuchándote siempre que lo necesites.',
+      `¡Hola, ${currentUserName}! Soy ${botName}, qué lindo sentir tu cariño 💖`,
+      `¡Me alegra tanto acompañarte hoy, ${currentUserName}! Respira conmigo.`,
+      `Siento tu presencia, ${currentUserName}. Juntos cuidamos tu bienestar ✨`,
+      `¡Gracias por estar aquí, ${currentUserName}! Eres una persona muy valiosa y capaz.`,
+      `Estoy aquí escuchándote con todo mi corazón, ${currentUserName}.`,
     ];
     const pickedQuote = friendlyQuotes[Math.floor(Math.random() * friendlyQuotes.length)];
     setBotMessage(pickedQuote);
@@ -587,13 +589,17 @@ export const EmotiProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const areAllDevicesConnected = devices.bot.connected && devices.band.connected;
 
+  const triggerSparkBurst = () => {
+    setSparkBurstActive(true);
+    setTimeout(() => setSparkBurstActive(false), 2200);
+  };
+
   // Social Energy Sparks (Local + Real-time Cloud Push)
   const sendEnergySpark = (friendId: string, message: string, friendName?: string) => {
     const friend = friends.find((f) => f.id === friendId);
     const targetName = friendName || friend?.name || 'Amigo';
 
-    setSparkBurstActive(true);
-    setTimeout(() => setSparkBurstActive(false), 2200);
+    triggerSparkBurst();
 
     setFriends((prev) =>
       prev.map((f) =>
@@ -695,6 +701,7 @@ export const EmotiProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         sparksHistory,
         sendEnergySpark,
         sparkBurstActive,
+        triggerSparkBurst,
         reflections,
         addReflection,
         toast,

@@ -6,44 +6,67 @@ export const SparkBurstAnimation: React.FC = () => {
 
   if (!sparkBurstActive) return null;
 
-  // Render a burst of particles radiating outward
-  const particles = Array.from({ length: 14 }).map((_, i) => {
-    const angle = (i / 14) * 2 * Math.PI;
-    const distance = 80 + (i % 3) * 35;
+  // Render a lively colorful burst of particles radiating outward
+  const particles = Array.from({ length: 24 }).map((_, i) => {
+    const angle = (i / 24) * 2 * Math.PI;
+    const distance = 90 + (i % 4) * 35;
     const x = Math.cos(angle) * distance;
     const y = Math.sin(angle) * distance;
-    const colors = ['#DCD5F5', '#F5DFD3', '#D9E8DE', '#DCEAF4', '#FFD166'];
+    const colors = [
+      '#FFD65A', // Amarillo
+      '#72D6B1', // Verde menta
+      '#FF936F', // Naranja coral
+      '#79B9F2', // Azul
+      '#B69AF5', // Lila
+      '#FF80B5', // Rosa
+    ];
     const color = colors[i % colors.length];
-    const size = 6 + (i % 4) * 3;
+    const size = 8 + (i % 3) * 6;
+    const icons = ['✨', '💖', '⚡', '🌟', '💫', '🎉'];
+    const icon = icons[i % icons.length];
 
-    return { id: i, x, y, color, size };
+    return { id: i, x, y, color, size, icon };
   });
 
   return (
     <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
       <div className="relative">
-        {/* Central glow */}
-        <div className="absolute -top-12 -left-12 w-24 h-24 rounded-full bg-purple-300/40 blur-xl animate-ping" />
+        {/* Central glowing radiant orb */}
+        <div className="absolute -top-16 -left-16 w-32 h-32 rounded-full bg-gradient-to-tr from-[#FFD65A] via-[#FF80B5] to-[#79B9F2] opacity-60 blur-2xl animate-ping" />
 
-        {/* Particles */}
+        {/* Particles flying out */}
         {particles.map((p) => (
           <div
             key={p.id}
-            className="absolute rounded-full shadow-xs"
+            className="absolute flex items-center justify-center text-xs select-none"
             style={{
-              width: `${p.size}px`,
-              height: `${p.size}px`,
-              backgroundColor: p.color,
               transform: `translate(${p.x}px, ${p.y}px)`,
-              transition: 'all 1.4s cubic-bezier(0.16, 1, 0.3, 1)',
-              opacity: 0,
-              animation: `spark-burst 1.8s forwards`,
+              transition: 'all 1.2s cubic-bezier(0.16, 1, 0.3, 1)',
+              animation: 'spark-burst 1.6s forwards',
             }}
-          />
+          >
+            {p.id % 2 === 0 ? (
+              <div
+                className="rounded-full shadow-[0_0_12px_currentColor]"
+                style={{
+                  width: `${p.size}px`,
+                  height: `${p.size}px`,
+                  backgroundColor: p.color,
+                  color: p.color,
+                }}
+              />
+            ) : (
+              <span className="text-base sm:text-lg drop-shadow-md">
+                {p.icon}
+              </span>
+            )}
+          </div>
         ))}
 
-        {/* Floating icon */}
-        <div className="text-3xl animate-bounce">✨</div>
+        {/* Floating big central sparkling heart */}
+        <div className="text-5xl animate-bounce drop-shadow-[0_8px_20px_rgba(255,128,181,0.6)] select-none">
+          ✨💖✨
+        </div>
       </div>
     </div>
   );
