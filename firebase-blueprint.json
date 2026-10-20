@@ -1,0 +1,130 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User account profile and synchronized emotional state",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "username": { "type": "string" },
+        "displayName": { "type": "string" },
+        "avatarBg": { "type": "string" },
+        "avatarInitials": { "type": "string" },
+        "botName": { "type": "string" },
+        "currentEmotion": { "type": "string" },
+        "botExpression": { "type": "string" },
+        "todayNote": { "type": "string" },
+        "moodVisibility": { "type": "string", "enum": ["friends", "nobody"] },
+        "updatedAt": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "email", "username", "displayName", "botName", "currentEmotion", "moodVisibility"]
+    },
+    "UserNotification": {
+      "title": "UserNotification",
+      "description": "In-app notifications for friend requests, energy sparks, and pulses",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["friend_request", "friend_accepted", "energy_spark", "support_pulse"] },
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "senderUsername": { "type": "string" },
+        "senderAvatarBg": { "type": "string" },
+        "senderAvatarInitials": { "type": "string" },
+        "message": { "type": "string" },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string" },
+        "relatedRequestId": { "type": "string" }
+      },
+      "required": ["id", "type", "senderId", "senderName", "message", "read", "createdAt"]
+    },
+    "FriendRequest": {
+      "title": "FriendRequest",
+      "description": "Friend request between two users",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "fromUserId": { "type": "string" },
+        "toUserId": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "accepted", "rejected"] },
+        "fromUsername": { "type": "string" },
+        "fromDisplayName": { "type": "string" },
+        "fromAvatarBg": { "type": "string" },
+        "fromAvatarInitials": { "type": "string" },
+        "toUsername": { "type": "string" },
+        "toDisplayName": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "fromUserId", "toUserId", "status", "fromUsername", "toUsername", "createdAt"]
+    },
+    "Friendship": {
+      "title": "Friendship",
+      "description": "Bi-directional friendship between two accepted users",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "users": { "type": "array" },
+        "user1Id": { "type": "string" },
+        "user2Id": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "users", "user1Id", "user2Id", "createdAt"]
+    },
+    "EnergySpark": {
+      "title": "EnergySpark",
+      "description": "Log of energy spark interaction sent or received",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "friendId": { "type": "string" },
+        "friendName": { "type": "string" },
+        "message": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "isIncoming": { "type": "boolean" }
+      },
+      "required": ["id", "friendId", "friendName", "message", "timestamp"]
+    },
+    "MoodLog": {
+      "title": "MoodLog",
+      "description": "Historical emotional log entry",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "dateKey": { "type": "string" },
+        "dayLabel": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "emotion": { "type": "string" },
+        "note": { "type": "string" }
+      },
+      "required": ["id", "dateKey", "dayLabel", "timestamp", "emotion"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Root user document storing profile details and synchronized emotional state"
+    },
+    "/users/{userId}/notifications/{notificationId}": {
+      "schema": "UserNotification",
+      "description": "Subcollection of notifications for a specific user"
+    },
+    "/users/{userId}/energySparks/{sparkId}": {
+      "schema": "EnergySpark",
+      "description": "History of energy sparks sent or received by the user"
+    },
+    "/users/{userId}/moodHistory/{entryId}": {
+      "schema": "MoodLog",
+      "description": "Daily emotional check-ins for the user"
+    },
+    "/friendRequests/{requestId}": {
+      "schema": "FriendRequest",
+      "description": "Friend request documents queried by sender and receiver"
+    },
+    "/friendships/{friendshipId}": {
+      "schema": "Friendship",
+      "description": "Confirmed friendships between pairs of users"
+    }
+  }
+}

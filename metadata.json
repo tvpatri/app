@@ -1,0 +1,6 @@
+{
+  "name": "EMOTI Ecosystem",
+  "description": "Interactive UX/UI prototype of the EMOTI emotional wellness ecosystem: Emoti-Bot, Emoti-Band & EmotiApp.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
