@@ -12,12 +12,17 @@ import {
 } from '../types';
 import { EMOTIONS_CONFIG, BOT_MESSAGES } from '../data/emotionsData';
 import {
-  INITIAL_FRIENDS,
   INITIAL_MOOD_HISTORY,
   INITIAL_REFLECTIONS,
 } from '../data/mockData';
 import { useAuth } from './AuthContext';
-import { sendSocialEnergySpark, sendSocialSupportPulse } from '../services/firebaseService';
+import { collection, onSnapshot } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import {
+  sendSocialEnergySpark,
+  sendSocialSupportPulse,
+  logMoodToHistory,
+} from '../services/firebaseService';
 
 interface ToastData {
   id: number;
@@ -169,28 +174,11 @@ export const EmotiProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [isPulseVibrating, setIsPulseVibrating] = useState(false);
   const [isMeasuringBiometrics, setIsMeasuringBiometrics] = useState(false);
 
-  // Friends & Sparks
-  const [friends, setFriends] = useState<Friend[]>(INITIAL_FRIENDS);
-  const [totalSparksSent, setTotalSparksSent] = useState<number>(3);
-  const [totalPulsesSent, setTotalPulsesSent] = useState<number>(2);
-  const [sparksHistory, setSparksHistory] = useState<EnergySparkEvent[]>([
-    {
-      id: 'spk-init-1',
-      friendId: 'f-1',
-      friendName: 'Sofía',
-      message: 'Te mando buena energía para tu día ✨',
-      timestamp: 'Hoy, 09:40',
-      isIncoming: false,
-    },
-    {
-      id: 'spk-init-2',
-      friendId: 'f-2',
-      friendName: 'Mateo',
-      message: '¡Tú puedes con el estudio!',
-      timestamp: 'Ayer, 16:15',
-      isIncoming: false,
-    },
-  ]);
+  // Friends & Sparks (Real Firestore synchronized)
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [totalSparksSent, setTotalSparksSent] = useState<number>(0);
+  const [totalPulsesSent, setTotalPulsesSent] = useState<number>(0);
+  const [sparksHistory, setSparksHistory] = useState<EnergySparkEvent[]>([]);
   const [sparkBurstActive, setSparkBurstActive] = useState(false);
 
   // Progress & reflections
@@ -246,33 +234,63 @@ export const EmotiProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
   }, [userProfile]);
 
-  // Sync accepted friends list from Firestore into the UI friends list
+  // Sync accepted friends list from Firestore into the UI friends list (NO mock users fallback!)
   useEffect(() => {
-    if (acceptedFriends && acceptedFriends.length > 0) {
+    if (acceptedFriends) {
       const mappedFriends: Friend[] = acceptedFriends.map((af) => ({
         id: af.id,
         name: af.displayName,
         username: af.username,
-        avatarBg: af.avatarBg || '#DCD5F5',
-        avatarColor: '#292A30',
+        avatarBg: af.avatarBg || '#FFD65A',
+        avatarColor: '#28243A',
         avatarInitials: af.avatarInitials || af.displayName.slice(0, 2).toUpperCase(),
         sharedMood: af.moodVisibility === 'friends' ? af.currentEmotion : undefined,
         isOnline: true,
         statusQuote: af.todayNote || 'Conectado a EMOTI',
-        sparksReceivedCount: 5,
+        sparksReceivedCount: 0,
         moodVisibility: af.moodVisibility,
       }));
-
-      // Combine with mock initial friends if not duplicate
-      const combined = [...mappedFriends];
-      INITIAL_FRIENDS.forEach((initF) => {
-        if (!combined.some((c) => c.name.toLowerCase() === initF.name.toLowerCase())) {
-          combined.push(initF);
-        }
-      });
-      setFriends(combined);
+      setFriends(mappedFriends);
     }
   }, [acceptedFriends]);
+
+  // Real-time Firestore listeners for current user's Energy Sparks and Mood History
+  useEffect(() => {
+    if (!userProfile?.id) {
+      setSparksHistory([]);
+      return;
+    }
+
+    const sparksCol = collection(db, `users/${userProfile.id}/energySparks`);
+    const unsubSparks = onSnapshot(
+      sparksCol,
+      (snap) => {
+        const list: EnergySparkEvent[] = [];
+        snap.forEach((d) => list.push({ ...(d.data() as EnergySparkEvent), id: d.id }));
+        setSparksHistory(list);
+        setTotalSparksSent(list.filter((s) => !s.isIncoming).length);
+      },
+      (err) => console.warn('Real-time sparks listener error:', err)
+    );
+
+    const moodCol = collection(db, `users/${userProfile.id}/moodHistory`);
+    const unsubMood = onSnapshot(
+      moodCol,
+      (snap) => {
+        if (!snap.empty) {
+          const list: MoodLogEntry[] = [];
+          snap.forEach((d) => list.push({ ...(d.data() as MoodLogEntry), id: d.id }));
+          setMoodHistory(list);
+        }
+      },
+      (err) => console.warn('Real-time mood listener error:', err)
+    );
+
+    return () => {
+      unsubSparks();
+      unsubMood();
+    };
+  }, [userProfile?.id]);
 
   // Fullscreen Device Controls
   const enterFullscreenDevice = (device: 'bot' | 'band') => {
@@ -412,6 +430,10 @@ export const EmotiProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         botExpression: targetFace,
         todayNote: note !== undefined ? note : todayNote,
       }).catch((err) => console.warn('Could not sync emotion to cloud:', err));
+
+      logMoodToHistory(userProfile.id, emotion, note).catch((err) =>
+        console.warn('Could not log mood to history in cloud:', err)
+      );
     }
 
     showToast(`Estado emocional: ${config.label} ${config.emoji}`, 'success');

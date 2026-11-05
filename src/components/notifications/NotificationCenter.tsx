@@ -34,9 +34,9 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
   if (!isOpen) return null;
 
   const handleAcceptRequest = async (req: any) => {
-    if (!user) return;
+    if (!user || !userProfile) return;
     try {
-      await acceptFriendRequest(req, user.uid);
+      await acceptFriendRequest(req, userProfile);
       await refreshFriends();
       triggerSparkBurst();
       showToast(`¡Ahora eres amigo de ${req.fromDisplayName}! ✨`, 'success');

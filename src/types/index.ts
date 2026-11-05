@@ -41,17 +41,22 @@ export interface EmotionMeta {
 export interface UserProfile {
   id: string;
   email: string;
+  emailVerified?: boolean;
   username: string; // e.g. "alexm"
+  usernameLower: string; // e.g. "alexm"
   displayName: string; // e.g. "Alex"
   avatarBg: string;
   avatarInitials: string;
+  photoURL?: string;
+  bio?: string;
   botName: string; // e.g. "Milo"
   currentEmotion: EmotionType;
   botExpression: BotExpression;
   todayNote?: string;
   moodVisibility: MoodVisibility;
-  createdAt?: string;
-  updatedAt?: string;
+  blockedUsers?: string[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AppNotification {

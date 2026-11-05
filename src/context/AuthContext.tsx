@@ -6,6 +6,7 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   sendPasswordResetEmail,
+  sendEmailVerification,
   GoogleAuthProvider,
   signInWithPopup,
 } from 'firebase/auth';
@@ -13,14 +14,11 @@ import {
   doc,
   setDoc,
   getDoc,
-  getDocs,
   updateDoc,
   onSnapshot,
   collection,
   query,
   where,
-  DocumentData,
-  QueryDocumentSnapshot,
 } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import {
@@ -30,29 +28,34 @@ import {
   FriendshipItem,
   SyncStatus,
 } from '../types';
-import { seedDemoUsersIfEmpty, DEMO_USERS } from '../services/firebaseService';
-
-interface SimpleAuthUser {
-  uid: string;
-  email: string | null;
-  displayName: string | null;
-}
+import {
+  checkUsernameAvailability,
+  blockUser,
+  unblockUser,
+  markNotificationAsRead,
+  deleteNotification,
+} from '../services/firebaseService';
 
 interface AuthContextType {
-  user: User | SimpleAuthUser | null;
+  user: User | null;
   userProfile: UserProfile | null;
   loading: boolean;
   syncStatus: SyncStatus;
   login: (email: string, pass: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
-  register: (email: string, pass: string, displayName: string, username: string) => Promise<void>;
-  loginDemo: (username: string) => Promise<void>;
+  register: (email: string, pass: string, displayName: string, username: string, bio?: string) => Promise<void>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  sendVerificationEmail: () => Promise<void>;
   updateUserProfile: (data: Partial<UserProfile>) => Promise<void>;
+  blockUserAction: (targetUserId: string) => Promise<void>;
+  unblockUserAction: (targetUserId: string) => Promise<void>;
+  markNotificationRead: (notifId: string) => Promise<void>;
+  deleteNotificationAction: (notifId: string) => Promise<void>;
   notifications: AppNotification[];
   unreadCount: number;
   incomingRequests: FriendRequestItem[];
+  outgoingRequests: FriendRequestItem[];
   acceptedFriends: UserProfile[];
   refreshFriends: () => Promise<void>;
 }
@@ -60,44 +63,27 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | SimpleAuthUser | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('synced');
 
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [incomingRequests, setIncomingRequests] = useState<FriendRequestItem[]>([]);
+  const [outgoingRequests, setOutgoingRequests] = useState<FriendRequestItem[]>([]);
   const [acceptedFriends, setAcceptedFriends] = useState<UserProfile[]>([]);
-
-  // Seed demo profiles in background on mount
-  useEffect(() => {
-    seedDemoUsersIfEmpty().catch(() => {});
-  }, []);
 
   // Listen to Firebase Auth state
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         setUser(firebaseUser);
-        localStorage.removeItem('emoti_local_user');
       } else {
-        // If no Firebase user, check if we have a persistent local profile
-        const savedUser = localStorage.getItem('emoti_local_user');
-        const savedProfile = localStorage.getItem('emoti_local_profile');
-        if (savedUser && savedProfile) {
-          try {
-            setUser(JSON.parse(savedUser));
-            setUserProfile(JSON.parse(savedProfile));
-          } catch {
-            setUser(null);
-            setUserProfile(null);
-          }
-        } else {
-          setUser(null);
-          setUserProfile(null);
-        }
+        setUser(null);
+        setUserProfile(null);
         setNotifications([]);
         setIncomingRequests([]);
+        setOutgoingRequests([]);
         setAcceptedFriends([]);
         setLoading(false);
       }
@@ -106,23 +92,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => unsubscribeAuth();
   }, []);
 
-  // Real-time synchronization of current user profile (when logged in with Firebase)
+  // Real-time synchronization of current user profile, notifications, requests and friends
   useEffect(() => {
     if (!user) {
       setLoading(false);
-      return;
-    }
-
-    // If using local simulation account
-    if (user.uid.startsWith('local_') || user.uid.startsWith('demo_') || user.uid.startsWith('user_')) {
-      const savedProfile = localStorage.getItem('emoti_local_profile');
-      if (savedProfile) {
-        try {
-          setUserProfile(JSON.parse(savedProfile));
-        } catch {}
-      }
-      setLoading(false);
-      setSyncStatus('synced');
       return;
     }
 
@@ -131,35 +104,48 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     let unsubscribeUser = () => {};
     let unsubscribeNotifs = () => {};
-    let unsubscribeRequests = () => {};
+    let unsubscribeIncomingRequests = () => {};
+    let unsubscribeOutgoingRequests = () => {};
     let unsubscribeFriendships = () => {};
+    let friendListeners: (() => void)[] = [];
 
     try {
+      // 1. Current User Profile Listener
       unsubscribeUser = onSnapshot(
         userDocRef,
         (docSnap) => {
           if (docSnap.exists()) {
-            const profile = docSnap.data() as UserProfile;
+            const profile = { ...(docSnap.data() as UserProfile), id: docSnap.id };
             setUserProfile(profile);
             setSyncStatus('synced');
           } else {
-            // New user initial profile fallback if not created yet
+            // Document does not exist yet (e.g. freshly created Google user)
+            const cleanUsername = (user.email?.split('@')[0] || 'usuario')
+              .toLowerCase()
+              .replace(/[^a-z0-9_]/g, '');
             const initialProfile: UserProfile = {
               id: user.uid,
               email: user.email || '',
-              username: (user.email?.split('@')[0] || 'usuario').toLowerCase().replace(/[^a-z0-9_]/g, ''),
+              emailVerified: user.emailVerified || false,
+              username: cleanUsername,
+              usernameLower: cleanUsername,
               displayName: user.displayName || 'Alex',
-              avatarBg: '#DCD5F5',
-              avatarInitials: (user.displayName || user.email || 'AL').slice(0, 2).toUpperCase(),
+              avatarBg: '#FFD65A',
+              avatarInitials: (user.displayName || user.email || 'EM').slice(0, 2).toUpperCase(),
+              photoURL: user.photoURL || undefined,
+              bio: '',
               botName: 'Milo',
               currentEmotion: 'tranquilo',
               botExpression: 'CALM',
-              todayNote: 'Sintonizando mi bienestar',
+              todayNote: 'Sintonizando mi bienestar en EMOTI',
               moodVisibility: 'friends',
+              blockedUsers: [],
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
             };
-            setDoc(userDocRef, initialProfile).catch(() => {});
+            setDoc(userDocRef, initialProfile).catch((err) =>
+              console.warn('Initial profile create error:', err)
+            );
             setUserProfile(initialProfile);
             setSyncStatus('synced');
           }
@@ -170,43 +156,64 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       );
 
-      // Real-time notifications listener
+      // 2. Real-time Notifications Listener
       const notifsCol = collection(db, `users/${user.uid}/notifications`);
       unsubscribeNotifs = onSnapshot(
         notifsCol,
         (snap) => {
           const notifList: AppNotification[] = [];
-          snap.forEach((d) => notifList.push({ ...d.data(), id: d.id } as AppNotification));
+          snap.forEach((d) => notifList.push({ ...(d.data() as AppNotification), id: d.id }));
           notifList.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
           setNotifications(notifList);
         },
-        () => {}
+        (err) => console.warn('Notifications listener error:', err)
       );
 
-      // Real-time incoming friend requests listener
-      const qRequests = query(
+      // 3. Real-time Incoming Friend Requests
+      const qIncoming = query(
         collection(db, 'friendRequests'),
         where('toUserId', '==', user.uid),
         where('status', '==', 'pending')
       );
-      unsubscribeRequests = onSnapshot(
-        qRequests,
+      unsubscribeIncomingRequests = onSnapshot(
+        qIncoming,
         (snap) => {
           const reqList: FriendRequestItem[] = [];
-          snap.forEach((d) => reqList.push({ ...d.data(), id: d.id } as FriendRequestItem));
+          snap.forEach((d) => reqList.push({ ...(d.data() as FriendRequestItem), id: d.id }));
+          reqList.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
           setIncomingRequests(reqList);
         },
-        () => {}
+        (err) => console.warn('Incoming requests listener error:', err)
       );
 
-      // Real-time friendships listener
+      // 4. Real-time Outgoing Friend Requests
+      const qOutgoing = query(
+        collection(db, 'friendRequests'),
+        where('fromUserId', '==', user.uid),
+        where('status', '==', 'pending')
+      );
+      unsubscribeOutgoingRequests = onSnapshot(
+        qOutgoing,
+        (snap) => {
+          const reqList: FriendRequestItem[] = [];
+          snap.forEach((d) => reqList.push({ ...(d.data() as FriendRequestItem), id: d.id }));
+          setOutgoingRequests(reqList);
+        },
+        (err) => console.warn('Outgoing requests listener error:', err)
+      );
+
+      // 5. Real-time Friendships and Live Multi-device Friend Profiles
       const qFriendships = query(
         collection(db, 'friendships'),
         where('users', 'array-contains', user.uid)
       );
       unsubscribeFriendships = onSnapshot(
         qFriendships,
-        async (snap) => {
+        (snap) => {
+          // Clean up old friend sub-listeners
+          friendListeners.forEach((unsub) => unsub());
+          friendListeners = [];
+
           const friendUserIds: string[] = [];
           snap.forEach((d) => {
             const data = d.data() as FriendshipItem;
@@ -219,21 +226,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             return;
           }
 
-          // Fetch friend profiles
-          const friendsProfiles: UserProfile[] = [];
-          for (const fId of friendUserIds) {
-            try {
-              const fDoc = await getDoc(doc(db, 'users', fId));
-              if (fDoc.exists()) {
-                friendsProfiles.push(fDoc.data() as UserProfile);
-              }
-            } catch {
-              // Ignore individual fetch errors
-            }
-          }
-          setAcceptedFriends(friendsProfiles);
+          // Attach real-time listener to each friend's profile document
+          // so when a friend changes their emotion or botName, it reflects immediately!
+          const friendsMap: Record<string, UserProfile> = {};
+
+          friendUserIds.forEach((fId) => {
+            const fDocRef = doc(db, 'users', fId);
+            const unsubFriend = onSnapshot(
+              fDocRef,
+              (fSnap) => {
+                if (fSnap.exists()) {
+                  friendsMap[fId] = { ...(fSnap.data() as UserProfile), id: fSnap.id };
+                  setAcceptedFriends(Object.values(friendsMap));
+                }
+              },
+              (err) => console.warn('Friend doc listener error:', err)
+            );
+            friendListeners.push(unsubFriend);
+          });
         },
-        () => {}
+        (err) => console.warn('Friendships listener error:', err)
       );
     } catch (err) {
       console.warn('Could not establish real-time listeners:', err);
@@ -244,38 +256,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => {
       unsubscribeUser();
       unsubscribeNotifs();
-      unsubscribeRequests();
+      unsubscribeIncomingRequests();
+      unsubscribeOutgoingRequests();
       unsubscribeFriendships();
+      friendListeners.forEach((unsub) => unsub());
     };
   }, [user]);
 
-  // Refresh friends helper
+  // Refresh friends manually helper
   const refreshFriends = async () => {
-    if (!user || user.uid.startsWith('local_') || user.uid.startsWith('demo_')) return;
+    if (!user) return;
     try {
       const qFriendships = query(
         collection(db, 'friendships'),
         where('users', 'array-contains', user.uid)
       );
-      const snap = await getDocs(qFriendships);
-      const friendUserIds: string[] = [];
-      snap.forEach((d: QueryDocumentSnapshot<DocumentData>) => {
-        const data = d.data() as FriendshipItem;
-        const otherId = data.users.find((uid) => uid !== user.uid);
-        if (otherId) friendUserIds.push(otherId);
-      });
-      const friendsProfiles: UserProfile[] = [];
-      for (const fId of friendUserIds) {
-        const fDoc = await getDoc(doc(db, 'users', fId));
-        if (fDoc.exists()) {
-          friendsProfiles.push(fDoc.data() as UserProfile);
-        }
-      }
-      setAcceptedFriends(friendsProfiles);
+      const snap = await onSnapshot(qFriendships, () => {});
+      snap();
     } catch {}
   };
 
-  // Login with Google (Recommended Provider)
+  // Login with Google
   const loginWithGoogle = async () => {
     setLoading(true);
     try {
@@ -284,34 +285,43 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const cred = await signInWithPopup(auth, provider);
       const gUser = cred.user;
 
-      localStorage.removeItem('emoti_local_user');
-      localStorage.removeItem('emoti_local_profile');
-
       const userDocRef = doc(db, 'users', gUser.uid);
       const snap = await getDoc(userDocRef);
       if (!snap.exists()) {
         const cleanUsername = (gUser.email?.split('@')[0] || 'usuario')
           .toLowerCase()
           .replace(/[^a-z0-9_]/g, '');
+
+        // Verify uniqueness
+        const isAvail = await checkUsernameAvailability(cleanUsername, gUser.uid);
+        const finalUsername = isAvail
+          ? cleanUsername
+          : `${cleanUsername}${Math.floor(100 + Math.random() * 900)}`;
+
         const profileData: UserProfile = {
           id: gUser.uid,
           email: gUser.email || '',
-          username: cleanUsername,
+          emailVerified: gUser.emailVerified || false,
+          username: finalUsername,
+          usernameLower: finalUsername.toLowerCase(),
           displayName: gUser.displayName || 'Alex',
-          avatarBg: '#DCD5F5',
-          avatarInitials: (gUser.displayName || gUser.email || 'US').slice(0, 2).toUpperCase(),
+          avatarBg: '#FFD65A',
+          avatarInitials: (gUser.displayName || gUser.email || 'EM').slice(0, 2).toUpperCase(),
+          photoURL: gUser.photoURL || undefined,
+          bio: '',
           botName: 'Milo',
           currentEmotion: 'tranquilo',
           botExpression: 'CALM',
           todayNote: '¡Comenzando mi viaje en EMOTI!',
           moodVisibility: 'friends',
+          blockedUsers: [],
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
         await setDoc(userDocRef, profileData);
         setUserProfile(profileData);
       } else {
-        setUserProfile(snap.data() as UserProfile);
+        setUserProfile({ ...(snap.data() as UserProfile), id: snap.id });
       }
       setUser(gUser);
       setSyncStatus('synced');
@@ -320,171 +330,73 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  // Login with Email/Password (with graceful fallback if Email auth is not enabled in Firebase Console)
+  // Login with Email/Password (NO fake simulation fallback)
   const login = async (email: string, pass: string) => {
     setLoading(true);
     try {
-      try {
-        const cred = await signInWithEmailAndPassword(auth, email, pass);
-        setUser(cred.user);
-      } catch (authErr: any) {
-        if (authErr.code === 'auth/operation-not-allowed') {
-          // Gracefully load existing local profile or create active session
-          const savedStr = localStorage.getItem('emoti_local_profile');
-          if (savedStr) {
-            try {
-              const p = JSON.parse(savedStr);
-              if (p.email === email) {
-                setUser({ uid: p.id, email: p.email, displayName: p.displayName });
-                setUserProfile(p);
-                setSyncStatus('synced');
-                return;
-              }
-            } catch {}
-          }
-
-          const uname = email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '');
-          const dName = uname.charAt(0).toUpperCase() + uname.slice(1);
-          const fallbackProfile: UserProfile = {
-            id: 'local_' + uname,
-            email,
-            username: uname,
-            displayName: dName,
-            avatarBg: '#DCD5F5',
-            avatarInitials: uname.slice(0, 2).toUpperCase(),
-            botName: 'Milo',
-            currentEmotion: 'tranquilo',
-            botExpression: 'CALM',
-            todayNote: 'Sesión activa en EMOTI',
-            moodVisibility: 'friends',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          };
-
-          localStorage.setItem('emoti_local_user', JSON.stringify({ uid: fallbackProfile.id, email, displayName: dName }));
-          localStorage.setItem('emoti_local_profile', JSON.stringify(fallbackProfile));
-          setUser({ uid: fallbackProfile.id, email, displayName: dName });
-          setUserProfile(fallbackProfile);
-          setSyncStatus('synced');
-          return;
-        }
-        throw authErr;
-      }
+      const cred = await signInWithEmailAndPassword(auth, email.trim(), pass);
+      setUser(cred.user);
     } finally {
       setLoading(false);
     }
   };
 
-  // Register with Email/Password (with graceful fallback if Email auth is not enabled in Firebase Console)
-  const register = async (email: string, pass: string, displayName: string, username: string) => {
+  // Register with Email/Password and real unique username verification
+  const register = async (
+    email: string,
+    pass: string,
+    displayName: string,
+    username: string,
+    bio?: string
+  ) => {
     setLoading(true);
     try {
       const cleanUsername = username.trim().toLowerCase().replace(/^@/, '').replace(/[^a-z0-9_]/g, '');
-      
-      try {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-        const newUser = userCredential.user;
-
-        const profileData: UserProfile = {
-          id: newUser.uid,
-          email,
-          username: cleanUsername,
-          displayName: displayName.trim(),
-          avatarBg: '#DCD5F5',
-          avatarInitials: displayName.slice(0, 2).toUpperCase(),
-          botName: 'Milo',
-          currentEmotion: 'tranquilo',
-          botExpression: 'CALM',
-          todayNote: '¡Comenzando mi viaje en EMOTI!',
-          moodVisibility: 'friends',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-
-        await setDoc(doc(db, 'users', newUser.uid), profileData);
-        setUser(newUser);
-        setUserProfile(profileData);
-        setSyncStatus('synced');
-      } catch (authErr: any) {
-        if (authErr.code === 'auth/operation-not-allowed') {
-          // Seamless fallback session so user registration succeeds without crash
-          const mockUid = 'user_' + cleanUsername;
-          const profileData: UserProfile = {
-            id: mockUid,
-            email,
-            username: cleanUsername,
-            displayName: displayName.trim(),
-            avatarBg: '#DCD5F5',
-            avatarInitials: displayName.slice(0, 2).toUpperCase(),
-            botName: 'Milo',
-            currentEmotion: 'tranquilo',
-            botExpression: 'CALM',
-            todayNote: '¡Comenzando mi viaje en EMOTI!',
-            moodVisibility: 'friends',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          };
-
-          localStorage.setItem('emoti_local_user', JSON.stringify({
-            uid: mockUid,
-            email,
-            displayName: displayName.trim(),
-          }));
-          localStorage.setItem('emoti_local_profile', JSON.stringify(profileData));
-
-          setUser({ uid: mockUid, email, displayName: displayName.trim() });
-          setUserProfile(profileData);
-          setSyncStatus('synced');
-          return;
-        }
-        throw authErr;
+      if (cleanUsername.length < 3) {
+        throw new Error('El nombre de usuario debe tener al menos 3 caracteres alfanuméricos.');
       }
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  // Demo Login Helper for Testing and Multi-device exploration
-  const loginDemo = async (demoUsername: string) => {
-    setLoading(true);
-    try {
-      const demoEmail = `${demoUsername}@emoti.app`;
-      const demoPassword = 'Password123!';
-      const names: Record<string, string> = {
-        alex: 'Alex',
-        sofia: 'Sofía',
-        mateo: 'Mateo',
-        valentina: 'Valentina',
-        diego: 'Diego',
+      // Check username availability in Firestore
+      const isAvailable = await checkUsernameAvailability(cleanUsername);
+      if (!isAvailable) {
+        throw new Error(`El nombre de usuario @${cleanUsername} ya está ocupado por otra persona. Por favor elige otro.`);
+      }
+
+      const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), pass);
+      const newUser = userCredential.user;
+
+      // Send email verification
+      try {
+        await sendEmailVerification(newUser);
+      } catch (err) {
+        console.warn('Could not send verification email:', err);
+      }
+
+      const nowIso = new Date().toISOString();
+      const profileData: UserProfile = {
+        id: newUser.uid,
+        email: email.trim(),
+        emailVerified: false,
+        username: cleanUsername,
+        usernameLower: cleanUsername,
+        displayName: displayName.trim(),
+        avatarBg: '#FFD65A',
+        avatarInitials: displayName.trim().slice(0, 2).toUpperCase(),
+        bio: bio?.trim() || '',
+        botName: 'Milo',
+        currentEmotion: 'tranquilo',
+        botExpression: 'CALM',
+        todayNote: '¡Comenzando mi viaje en EMOTI!',
+        moodVisibility: 'friends',
+        blockedUsers: [],
+        createdAt: nowIso,
+        updatedAt: nowIso,
       };
-      const dName = names[demoUsername] || demoUsername;
 
-      try {
-        await signInWithEmailAndPassword(auth, demoEmail, demoPassword);
-      } catch {
-        // Fallback to rich demo profile session
-        const demoProfile: UserProfile = {
-          id: 'demo_' + demoUsername,
-          email: demoEmail,
-          username: demoUsername,
-          displayName: dName,
-          avatarBg: demoUsername === 'alex' ? '#DCD5F5' : demoUsername === 'sofia' ? '#F5DFD3' : demoUsername === 'mateo' ? '#D9E8DE' : '#DCEAF4',
-          avatarInitials: dName.slice(0, 2).toUpperCase(),
-          botName: demoUsername === 'alex' ? 'Milo' : demoUsername === 'sofia' ? 'Lumi' : 'Astro',
-          currentEmotion: demoUsername === 'alex' ? 'feliz' : demoUsername === 'sofia' ? 'tranquilo' : 'cansado',
-          botExpression: demoUsername === 'alex' ? 'HAPPY' : 'CALM',
-          todayNote: `Modo demostración como @${demoUsername}`,
-          moodVisibility: 'friends',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-
-        localStorage.setItem('emoti_local_user', JSON.stringify({ uid: demoProfile.id, email: demoEmail, displayName: dName }));
-        localStorage.setItem('emoti_local_profile', JSON.stringify(demoProfile));
-        setUser({ uid: demoProfile.id, email: demoEmail, displayName: dName });
-        setUserProfile(demoProfile);
-        setSyncStatus('synced');
-      }
+      await setDoc(doc(db, 'users', newUser.uid), profileData);
+      setUser(newUser);
+      setUserProfile(profileData);
+      setSyncStatus('synced');
     } finally {
       setLoading(false);
     }
@@ -497,25 +409,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         await signOut(auth);
       }
     } catch {}
-    localStorage.removeItem('emoti_local_user');
-    localStorage.removeItem('emoti_local_profile');
     setUser(null);
     setUserProfile(null);
     setNotifications([]);
     setIncomingRequests([]);
+    setOutgoingRequests([]);
     setAcceptedFriends([]);
   };
 
   // Reset password
   const resetPassword = async (email: string) => {
-    try {
-      await sendPasswordResetEmail(auth, email);
-    } catch (err: any) {
-      if (err.code === 'auth/operation-not-allowed') {
-        // Inform user gently
-        return;
-      }
-      throw err;
+    await sendPasswordResetEmail(auth, email.trim());
+  };
+
+  // Send verification email
+  const sendVerificationEmail = async () => {
+    if (auth.currentUser) {
+      await sendEmailVerification(auth.currentUser);
     }
   };
 
@@ -524,39 +434,60 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!user || !userProfile) return;
     setSyncStatus('syncing');
 
+    // If changing username, verify uniqueness first
+    if (data.username && data.username.toLowerCase() !== userProfile.username.toLowerCase()) {
+      const cleanUsername = data.username.trim().toLowerCase().replace(/^@/, '').replace(/[^a-z0-9_]/g, '');
+      const isAvail = await checkUsernameAvailability(cleanUsername, user.uid);
+      if (!isAvail) {
+        setSyncStatus('synced');
+        throw new Error(`El nombre de usuario @${cleanUsername} ya está en uso.`);
+      }
+      data.username = cleanUsername;
+      data.usernameLower = cleanUsername;
+    }
+
     const updated = {
       ...data,
       updatedAt: new Date().toISOString(),
     };
 
     try {
-      if (auth.currentUser && auth.currentUser.uid === user.uid) {
-        await updateDoc(doc(db, 'users', user.uid), updated);
-      }
+      await updateDoc(doc(db, 'users', user.uid), updated);
       const newProfile = { ...userProfile, ...updated };
       setUserProfile(newProfile);
-      localStorage.setItem('emoti_local_profile', JSON.stringify(newProfile));
       setSyncStatus('synced');
     } catch (err) {
-      console.warn('Update user profile local fallback:', err);
-      const newProfile = { ...userProfile, ...updated };
-      setUserProfile(newProfile);
-      localStorage.setItem('emoti_local_profile', JSON.stringify(newProfile));
-      setSyncStatus('synced');
+      console.error('Update user profile error:', err);
+      setSyncStatus('offline');
+      throw err;
     }
   };
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  // Block user action
+  const blockUserAction = async (targetUserId: string) => {
+    if (!user || !userProfile) return;
+    await blockUser(user.uid, targetUserId, userProfile.blockedUsers || []);
+  };
 
-  // Provide rich default friends from DEMO_USERS so social circle is vibrant
-  const effectiveFriends = acceptedFriends.length > 0
-    ? acceptedFriends
-    : DEMO_USERS.filter((u) => u.username !== userProfile?.username).map((u) => ({
-        ...u,
-        id: 'demo_' + u.username,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      } as UserProfile));
+  // Unblock user action
+  const unblockUserAction = async (targetUserId: string) => {
+    if (!user || !userProfile) return;
+    await unblockUser(user.uid, targetUserId, userProfile.blockedUsers || []);
+  };
+
+  // Mark notification read
+  const markNotificationRead = async (notifId: string) => {
+    if (!user) return;
+    await markNotificationAsRead(user.uid, notifId);
+  };
+
+  // Delete notification
+  const deleteNotificationAction = async (notifId: string) => {
+    if (!user) return;
+    await deleteNotification(user.uid, notifId);
+  };
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
     <AuthContext.Provider
@@ -568,14 +499,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         login,
         loginWithGoogle,
         register,
-        loginDemo,
         logout,
         resetPassword,
+        sendVerificationEmail,
         updateUserProfile,
+        blockUserAction,
+        unblockUserAction,
+        markNotificationRead,
+        deleteNotificationAction,
         notifications,
         unreadCount,
         incomingRequests,
-        acceptedFriends: effectiveFriends,
+        outgoingRequests,
+        acceptedFriends,
         refreshFriends,
       }}
     >

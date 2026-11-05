@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useEmoti } from '../../context/EmotiContext';
 import { Friend } from '../../types';
 import { EMOTIONS_CONFIG } from '../../data/emotionsData';
-import { QUICK_SPARK_MESSAGES } from '../../data/mockData';
 import { 
   Users, 
   Sparkles, 
@@ -17,6 +16,13 @@ import {
   CheckCircle2
 } from 'lucide-react';
 
+const REAL_SPARK_MESSAGES = [
+  'Estoy aquí para ti 💖',
+  '¿Quieres hablar? ☕',
+  '¡Tú puedes con todo! 💪',
+  'Te mando buena energía ✨',
+];
+
 export const FriendsNetwork: React.FC = () => {
   const {
     friends,
@@ -24,11 +30,12 @@ export const FriendsNetwork: React.FC = () => {
     sparksHistory,
     totalSparksSent,
     triggerSparkBurst,
-    showToast
+    showToast,
+    setActiveTab,
   } = useEmoti();
 
   const [activeFriendForSpark, setActiveFriendForSpark] = useState<Friend | null>(null);
-  const [selectedMessage, setSelectedMessage] = useState(QUICK_SPARK_MESSAGES[0]);
+  const [selectedMessage, setSelectedMessage] = useState(REAL_SPARK_MESSAGES[0]);
   const [customMessage, setCustomMessage] = useState('');
 
   const handleSend = () => {
@@ -78,14 +85,29 @@ export const FriendsNetwork: React.FC = () => {
 
       {/* Friends Cards List with large colorful avatars and rich cards */}
       <div className="space-y-3.5">
-        {friends.map((friend) => {
-          const moodMeta = friend.sharedMood ? EMOTIONS_CONFIG[friend.sharedMood] : null;
-
-          return (
-            <div
-              key={friend.id}
-              className="bg-white rounded-3xl p-5 border-2 border-[#FFD65A]/40 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-[#FF936F] transition-all hover:shadow-md group"
+        {friends.length === 0 ? (
+          <div className="bg-white rounded-3xl p-8 border-2 border-[#FFD65A]/50 text-center space-y-3 shadow-sm">
+            <Users className="w-12 h-12 mx-auto text-[#FFD65A] animate-bounce" />
+            <h3 className="text-base font-black text-[#28243A]">Aún no tienes amigos en tu círculo</h3>
+            <p className="text-xs text-[#28243A]/70 max-w-sm mx-auto font-medium">
+              Conecta con amigos reales buscándolos por su @username en Mi Círculo para enviarles Energy Sparks.
+            </p>
+            <button
+              onClick={() => setActiveTab('circle')}
+              className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-[#FFD65A] to-[#FF936F] text-[#28243A] text-xs font-black shadow-xs hover:scale-105 active:scale-95 transition-all cursor-pointer"
             >
+              Ir a Mi Círculo
+            </button>
+          </div>
+        ) : (
+          friends.map((friend) => {
+            const moodMeta = friend.sharedMood ? EMOTIONS_CONFIG[friend.sharedMood] : null;
+
+            return (
+              <div
+                key={friend.id}
+                className="bg-white rounded-3xl p-5 border-2 border-[#FFD65A]/40 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-[#FF936F] transition-all hover:shadow-md group"
+              >
               {/* Left: Avatar & Info */}
               <div className="flex items-start gap-4">
                 <div className="relative shrink-0">
@@ -156,7 +178,7 @@ export const FriendsNetwork: React.FC = () => {
                 <button
                   onClick={() => {
                     setActiveFriendForSpark(friend);
-                    setSelectedMessage(QUICK_SPARK_MESSAGES[0]);
+                    setSelectedMessage(REAL_SPARK_MESSAGES[0]);
                   }}
                   className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-[#FFD65A] via-[#FF936F] to-[#FF80B5] hover:scale-105 text-[#28243A] text-xs font-black shadow-[0_4px_14px_rgba(255,147,111,0.35)] transition-all active:scale-95 border border-white"
                 >
@@ -166,8 +188,9 @@ export const FriendsNetwork: React.FC = () => {
               </div>
             </div>
           );
-        })}
-      </div>
+        })
+      )}
+    </div>
 
       {/* Interactive Send Spark Modal */}
       {activeFriendForSpark && (
@@ -199,7 +222,7 @@ export const FriendsNetwork: React.FC = () => {
                 Elige un mensaje empático rápido:
               </label>
               <div className="grid grid-cols-1 gap-2">
-                {QUICK_SPARK_MESSAGES.map((msg, i) => (
+                {REAL_SPARK_MESSAGES.map((msg, i) => (
                   <button
                     key={i}
                     onClick={() => setSelectedMessage(msg)}
@@ -209,7 +232,7 @@ export const FriendsNetwork: React.FC = () => {
                         : 'bg-white border-[#FFD65A]/40 text-[#28243A]/80 hover:border-[#FFD65A]'
                     }`}
                   >
-                    {msg}
+                    "{msg}"
                   </button>
                 ))}
               </div>

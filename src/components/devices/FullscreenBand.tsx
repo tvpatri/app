@@ -35,12 +35,17 @@ export const FullscreenBand: React.FC = () => {
   } = useEmoti();
 
   const [showEmotionPicker, setShowEmotionPicker] = useState(false);
-  const [targetFriendName, setTargetFriendName] = useState('Sofía');
+  const [targetFriendName, setTargetFriendName] = useState(friends[0]?.name || '');
 
   const currentMeta = EMOTIONS_CONFIG[currentEmotion];
 
   const handlePulse = () => {
-    sendSupportPulse(targetFriendName);
+    const friend = friends.find((f) => f.name === targetFriendName) || friends[0];
+    if (!friend) {
+      showToast('Agrega amigos en Mi Círculo para enviarles un pulso de apoyo.', 'info');
+      return;
+    }
+    sendSupportPulse(friend.name, friend.id);
     triggerSparkBurst();
   };
 
@@ -217,19 +222,23 @@ export const FullscreenBand: React.FC = () => {
           <div className="flex items-center justify-between text-xs px-1 pt-1 border-t border-white/10 text-gray-400 flex-wrap gap-2">
             <span className="font-bold">Enviar pulso a:</span>
             <div className="flex items-center gap-1.5 flex-wrap">
-              {friends.map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => setTargetFriendName(f.name)}
-                  className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
-                    targetFriendName === f.name
-                      ? 'bg-gradient-to-r from-[#FFD65A] to-[#FF936F] text-[#28243A] shadow-xs scale-105'
-                      : 'bg-white/10 text-gray-300 hover:bg-white/20'
-                  }`}
-                >
-                  {f.name}
-                </button>
-              ))}
+              {friends.length > 0 ? (
+                friends.map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => setTargetFriendName(f.name)}
+                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                      targetFriendName === f.name
+                        ? 'bg-gradient-to-r from-[#FFD65A] to-[#FF936F] text-[#28243A] shadow-xs scale-105'
+                        : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                    }`}
+                  >
+                    {f.name}
+                  </button>
+                ))
+              ) : (
+                <span className="text-[11px] text-gray-400 italic">Sin amigos agregados en Mi Círculo</span>
+              )}
             </div>
           </div>
         </div>

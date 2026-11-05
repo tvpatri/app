@@ -7,19 +7,24 @@
       "properties": {
         "id": { "type": "string" },
         "email": { "type": "string", "format": "email" },
+        "emailVerified": { "type": "boolean" },
         "username": { "type": "string" },
+        "usernameLower": { "type": "string" },
         "displayName": { "type": "string" },
         "avatarBg": { "type": "string" },
         "avatarInitials": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "bio": { "type": "string" },
         "botName": { "type": "string" },
         "currentEmotion": { "type": "string" },
         "botExpression": { "type": "string" },
         "todayNote": { "type": "string" },
         "moodVisibility": { "type": "string", "enum": ["friends", "nobody"] },
+        "blockedUsers": { "type": "array" },
         "updatedAt": { "type": "string" },
         "createdAt": { "type": "string" }
       },
-      "required": ["id", "email", "username", "displayName", "botName", "currentEmotion", "moodVisibility"]
+      "required": ["id", "email", "username", "usernameLower", "displayName", "botName", "currentEmotion", "moodVisibility", "createdAt", "updatedAt"]
     },
     "UserNotification": {
       "title": "UserNotification",
@@ -82,7 +87,8 @@
         "friendName": { "type": "string" },
         "message": { "type": "string" },
         "timestamp": { "type": "string" },
-        "isIncoming": { "type": "boolean" }
+        "isIncoming": { "type": "boolean" },
+        "createdAt": { "type": "string" }
       },
       "required": ["id", "friendId", "friendName", "message", "timestamp"]
     },
@@ -96,7 +102,8 @@
         "dayLabel": { "type": "string" },
         "timestamp": { "type": "string" },
         "emotion": { "type": "string" },
-        "note": { "type": "string" }
+        "note": { "type": "string" },
+        "createdAt": { "type": "string" }
       },
       "required": ["id", "dateKey", "dayLabel", "timestamp", "emotion"]
     }

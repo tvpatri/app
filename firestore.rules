@@ -23,13 +23,17 @@ service cloud.firestore {
       match /notifications/{notificationId} {
         // Owner can read, update (mark as read), and delete their notifications
         allow read, update, delete: if isOwner(userId);
-        // Any authenticated user can create a notification for another user (e.g., spark or friend request)
+        // Any authenticated user can create a notification for another user (e.g. spark or friend request)
         allow create: if isAuthenticated();
       }
 
       // Energy sparks history subcollection
       match /energySparks/{sparkId} {
-        allow read, write: if isOwner(userId);
+        // Owner can read, write; or authenticated sender can record a spark for this user
+        allow read, write: if isAuthenticated() && (
+          isOwner(userId) ||
+          request.resource.data.senderId == request.auth.uid
+        );
       }
 
       // Mood history subcollection
@@ -45,9 +49,9 @@ service cloud.firestore {
         resource.data.fromUserId == request.auth.uid ||
         resource.data.toUserId == request.auth.uid
       );
-      // Sender can create a friend request
+      // Authenticated sender can create a friend request
       allow create: if isAuthenticated() && request.resource.data.fromUserId == request.auth.uid;
-      // Sender or receiver can update (e.g., accept/reject) or delete
+      // Sender or receiver can update (accept/reject) or delete
       allow update, delete: if isAuthenticated() && (
         resource.data.fromUserId == request.auth.uid ||
         resource.data.toUserId == request.auth.uid
@@ -68,6 +72,11 @@ service cloud.firestore {
         request.auth.uid in resource.data.users
       );
       allow update: if false;
+    }
+
+    // Global default deny
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

@@ -50,6 +50,10 @@ export const EmotiBand: React.FC = () => {
   };
 
   const handleSendPulse = () => {
+    if (!targetFriend) {
+      showToast('Agrega amigos en Mi Círculo para enviarles un pulso de apoyo.', 'info');
+      return;
+    }
     sendSupportPulse(targetFriend.name, targetFriend.id);
     triggerSparkBurst();
   };
@@ -323,17 +327,21 @@ export const EmotiBand: React.FC = () => {
           </span>
           <div className="flex items-center gap-2 text-xs">
             <span className="font-bold text-[#28243A]/70">Enviar apoyo a:</span>
-            <select
-              value={selectedFriendIndex}
-              onChange={(e) => setSelectedFriendIndex(Number(e.target.value))}
-              className="bg-[#FFF9F0] border-2 border-[#FFD65A]/60 rounded-xl px-2.5 py-1 text-xs text-[#28243A] font-bold focus:outline-none"
-            >
-              {friends.map((f, i) => (
-                <option key={f.id} value={i}>
-                  {f.name}
-                </option>
-              ))}
-            </select>
+            {friends.length > 0 ? (
+              <select
+                value={selectedFriendIndex}
+                onChange={(e) => setSelectedFriendIndex(Number(e.target.value))}
+                className="bg-[#FFF9F0] border-2 border-[#FFD65A]/60 rounded-xl px-2.5 py-1 text-xs text-[#28243A] font-bold focus:outline-none"
+              >
+                {friends.map((f, i) => (
+                  <option key={f.id} value={i}>
+                    {f.name} (@{f.username || 'amigo'})
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="text-[11px] text-[#28243A]/60 font-semibold italic">Sin amigos en Mi Círculo</span>
+            )}
           </div>
         </div>
 
@@ -366,7 +374,7 @@ export const EmotiBand: React.FC = () => {
               <Sparkles className="w-3.5 h-3.5" />
               <span>Último pulso enviado: {bandBiometrics.lastPulseSent}</span>
             </span>
-            <span className="font-black">Recibido por {targetFriend.name}</span>
+            <span className="font-black">Recibido por {targetFriend ? targetFriend.name : 'tu amigo'}</span>
           </div>
         )}
       </div>
