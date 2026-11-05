@@ -159,16 +159,10 @@ export const EmotiBand: React.FC = () => {
           </div>
         )}
 
-        {/* Bracelet Strap Silhouette */}
-        <div className="relative w-full max-w-sm flex items-center justify-center">
-          {/* Left Strap */}
-          <div className="w-16 sm:w-20 h-20 bg-gradient-to-r from-[#EDEDEC] to-[#F5F5F3] rounded-l-2xl border-y-2 border-l-2 border-[#D6D8DC] shadow-inner flex items-center justify-center">
-            <div className="w-1.5 h-10 bg-[#D6D8DC] rounded-full" />
-          </div>
-
-          {/* Central Curved Smart Core Capsule with Dynamic Bezel Ring */}
+        {/* Real-time Hardware Sensor Monitor Console */}
+        <div className="relative w-full max-w-md flex items-center justify-center">
           <div
-            className={`relative z-10 w-56 sm:w-64 h-36 bg-[#141518] rounded-[2.5rem] p-3.5 shadow-[0_16px_36px_-6px_rgba(40,36,58,0.35),0_0_0_2px_#FFF] border-2 transition-all duration-300 flex flex-col justify-between ${
+            className={`relative z-10 w-full max-w-sm bg-[#141518] rounded-3xl p-5 shadow-[0_16px_36px_-6px_rgba(40,36,58,0.35),0_0_0_2px_#FFF] border-2 transition-all duration-300 flex flex-col justify-between space-y-4 ${
               isPulseVibrating 
                 ? 'scale-105 ring-4 ring-[#FF80B5]' 
                 : 'hover:scale-101'
@@ -176,26 +170,25 @@ export const EmotiBand: React.FC = () => {
             style={{ borderColor: currentEmotionMeta.accentHex }}
           >
             {/* Screen Glass Reflection */}
-            <div className="absolute top-0 left-0 right-0 h-14 bg-gradient-to-b from-white/15 to-transparent rounded-t-[2.3rem] pointer-events-none" />
+            <div className="absolute top-0 left-0 right-0 h-14 bg-gradient-to-b from-white/10 to-transparent rounded-t-3xl pointer-events-none" />
 
             {/* Top digital bar */}
-            <div className="flex items-center justify-between text-[10px] text-gray-400 font-mono tracking-wider">
-              <span className="flex items-center gap-1 text-[#72D6B1]">
-                <Radio className="w-3 h-3 animate-pulse" />
-                <span>BLE 5.3</span>
+            <div className="flex items-center justify-between text-xs text-gray-400 font-mono tracking-wider">
+              <span className="flex items-center gap-1.5 text-[#72D6B1]">
+                <Radio className="w-3.5 h-3.5 animate-pulse" />
+                <span>Sensor Háptico BLE 5.3</span>
               </span>
-              <span className="text-white font-bold">11:04 AM</span>
-              <span className="text-[#FFD65A] font-bold">{devices.band.battery}%</span>
+              <span className="text-[#FFD65A] font-bold">Batería {devices.band.battery}%</span>
             </div>
 
             {/* Center Biometrics Display with Circular Gauges */}
             <div className="flex items-center justify-between px-1 my-auto">
               {/* Heart Rate + Circular Mini Gauge */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <div className="relative flex items-center justify-center">
-                  {renderCircleGauge(Math.min(100, (bandBiometrics.bpm / 120) * 100), '#FF80B5', 48, 4)}
+                  {renderCircleGauge(Math.min(100, (bandBiometrics.bpm / 120) * 100), '#FF80B5', 52, 4)}
                   <Heart
-                    className={`w-5 h-5 text-[#FF80B5] fill-[#FF80B5] absolute ${
+                    className={`w-6 h-6 text-[#FF80B5] fill-[#FF80B5] absolute ${
                       devices.band.connected ? 'animate-pulse' : 'opacity-40'
                     }`}
                     style={{ animationDuration: `${Math.max(500, 60000 / bandBiometrics.bpm)}ms` }}
@@ -203,37 +196,37 @@ export const EmotiBand: React.FC = () => {
                 </div>
                 <div>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-xl sm:text-2xl font-black font-mono text-white tracking-tight">
+                    <span className="text-2xl sm:text-3xl font-black font-mono text-white tracking-tight">
                       {bandBiometrics.bpm}
                     </span>
-                    <span className="text-[10px] font-bold text-gray-400">BPM</span>
+                    <span className="text-xs font-bold text-gray-400">BPM</span>
                   </div>
-                  <span className="text-[9px] text-gray-400 block -mt-0.5">Ritmo cardíaco</span>
+                  <span className="text-[10px] text-gray-400 block -mt-0.5">Ritmo cardíaco</span>
                 </div>
               </div>
 
               {/* Stress Circular Gauge */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 <div className="text-right">
-                  <span className="text-[9px] uppercase tracking-wider text-gray-400 block">
+                  <span className="text-[10px] uppercase tracking-wider text-gray-400 block font-mono">
                     Estrés
                   </span>
                   <span
-                    className="text-[11px] font-black font-mono px-2 py-0.5 rounded-full inline-block mt-0.5"
+                    className="text-xs font-black font-mono px-2.5 py-0.5 rounded-full inline-block mt-0.5"
                     style={{ backgroundColor: `${currentEmotionMeta.accentHex}30`, color: currentEmotionMeta.accentHex }}
                   >
                     {bandBiometrics.stressLevel}
                   </span>
                 </div>
                 <div className="relative flex items-center justify-center">
-                  {renderCircleGauge(stressInfo.percent, currentEmotionMeta.accentHex, 40, 3.5)}
-                  <Zap className="w-3.5 h-3.5 absolute" style={{ color: currentEmotionMeta.accentHex }} />
+                  {renderCircleGauge(stressInfo.percent, currentEmotionMeta.accentHex, 44, 3.5)}
+                  <Zap className="w-4 h-4 absolute" style={{ color: currentEmotionMeta.accentHex }} />
                 </div>
               </div>
             </div>
 
             {/* Dynamic Real-Time Animated ECG Wave */}
-            <div className="w-full h-4 overflow-hidden relative">
+            <div className="w-full h-5 overflow-hidden relative">
               <svg className="w-full h-full" viewBox="0 0 100 20">
                 <defs>
                   <linearGradient id="ecgGrad" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -253,11 +246,6 @@ export const EmotiBand: React.FC = () => {
                 />
               </svg>
             </div>
-          </div>
-
-          {/* Right Strap */}
-          <div className="w-16 sm:w-20 h-20 bg-gradient-to-l from-[#EDEDEC] to-[#F5F5F3] rounded-r-2xl border-y-2 border-r-2 border-[#D6D8DC] shadow-inner flex items-center justify-end pr-3">
-            <div className="w-2.5 h-8 bg-[#D6D8DC] rounded-full" />
           </div>
         </div>
 

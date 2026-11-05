@@ -10,11 +10,11 @@ import {
   Radio, 
   Sparkles, 
   ArrowLeft, 
-  SendHorizontal, 
   CheckCircle2, 
   AlertTriangle,
   RotateCw,
-  Fingerprint
+  Send,
+  Watch
 } from 'lucide-react';
 
 export const FullscreenBand: React.FC = () => {
@@ -30,6 +30,8 @@ export const FullscreenBand: React.FC = () => {
     friends,
     exitFullscreenDevice,
     setActiveTab,
+    triggerSparkBurst,
+    showToast
   } = useEmoti();
 
   const [showEmotionPicker, setShowEmotionPicker] = useState(false);
@@ -37,196 +39,192 @@ export const FullscreenBand: React.FC = () => {
 
   const currentMeta = EMOTIONS_CONFIG[currentEmotion];
 
+  const handlePulse = () => {
+    sendSupportPulse(targetFriendName);
+    triggerSparkBurst();
+  };
+
+  const handleMeasure = () => {
+    measureBiometrics();
+    triggerSparkBurst();
+    showToast('Escaneando biometría psicofisiológica...', 'info');
+  };
+
   return (
-    <div className="fixed inset-0 z-50 bg-[#FFF9F0] flex flex-col justify-between p-4 sm:p-6 overflow-hidden select-none">
-      {/* Top Header */}
-      <div className="flex items-center justify-between z-20">
-        <div className="flex items-center gap-2 bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl border-2 border-[#FFD65A]/50 shadow-xs">
+    <div className="fixed inset-0 z-50 bg-[#121316] text-white flex flex-col justify-between p-4 sm:p-6 overflow-y-auto select-none">
+      {/* Top Header Bar */}
+      <div className="flex items-center justify-between z-20 shrink-0">
+        <div className="flex items-center gap-2.5 bg-white/10 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/15 shadow-xs">
           <span className="w-2.5 h-2.5 rounded-full bg-[#72D6B1] animate-ping" />
-          <span className="text-xs font-black tracking-tight text-[#28243A]">
-            Emoti-Band Wearable OS
+          <div className="flex items-center gap-1.5">
+            <Watch className="w-4 h-4 text-[#72D6B1]" />
+            <span className="text-xs font-black tracking-tight text-white">
+              Emoti-Band
+            </span>
+          </div>
+          <span className="text-[10px] font-bold text-[#72D6B1] bg-[#72D6B1]/20 px-2 py-0.5 rounded-full">
+            BLE 5.3 Activo
           </span>
-          <span className="text-[10px] font-bold text-[#1D6E50] bg-[#72D6B1]/20 px-2 py-0.5 rounded-full">BLE 5.3</span>
+          <span className="text-xs font-mono text-gray-300 ml-1">
+            {devices.band.battery}%
+          </span>
         </div>
 
         <button
           onClick={exitFullscreenDevice}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-white border-2 border-[#FFD65A]/50 hover:bg-[#FFF2DE] text-[#28243A] text-xs font-black transition-all hover:scale-105 active:scale-95 shadow-xs"
-          title="Volver a la aplicación"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-white/15 hover:bg-white/25 backdrop-blur-md text-white text-xs font-black transition-all hover:scale-105 active:scale-95 border border-white/20 shadow-xs"
+          title="Volver a la interfaz principal"
         >
           <span>Volver a la app</span>
           <X className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Center: Wrist and Wearable Device Simulation */}
-      <div className="relative flex-1 flex flex-col items-center justify-center my-auto">
+      {/* Center Console: Real-time Biometrics & Sensor Display */}
+      <div className="relative flex-1 flex flex-col items-center justify-center my-4 sm:my-auto max-w-lg w-full mx-auto space-y-6">
         {/* Optical Sensor Glow when measuring */}
         {isMeasuringBiometrics && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-            <div className="w-64 h-64 rounded-full bg-emerald-400/20 blur-2xl animate-ping" />
+            <div className="w-72 h-72 rounded-full bg-[#72D6B1]/25 blur-3xl animate-ping" />
           </div>
         )}
 
-        {/* Haptic Pulse Waves */}
+        {/* Haptic Support Pulse Shockwave Rings */}
         {isPulseVibrating && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-            <div className="w-72 h-72 sm:w-96 sm:h-96 rounded-full border-4 border-rose-400/80 animate-ping" />
-            <div className="w-56 h-56 sm:w-72 sm:h-72 rounded-full border-2 border-purple-400/70 animate-pulse" />
+            <div className="w-80 h-80 sm:w-96 sm:h-96 rounded-full border-4 border-[#FF80B5] animate-ping" />
+            <div className="w-64 h-64 sm:w-80 sm:h-80 rounded-full bg-gradient-to-tr from-[#FF80B5]/40 to-[#FF936F]/40 blur-2xl animate-pulse" />
           </div>
         )}
 
-        {/* Realistic Arm & Forearm Render Silhouette */}
-        <div className="relative w-full max-w-lg flex items-center justify-center">
-          {/* Forearm (Top portion) */}
-          <div className="absolute top-1/2 -translate-y-1/2 left-0 w-28 sm:w-36 h-48 sm:h-56 bg-gradient-to-r from-[#E2D2C3] via-[#E8D9CB] to-[#DFCBB9] rounded-l-[4rem] shadow-inner opacity-90 -z-10" />
+        {/* Giant Biometric Display Card */}
+        <div 
+          className="w-full bg-[#1A1C22] rounded-3xl p-6 sm:p-8 border-2 transition-all duration-300 shadow-[0_20px_50px_rgba(0,0,0,0.6)] space-y-6 relative overflow-hidden"
+          style={{ borderColor: currentMeta.accentHex }}
+        >
+          {/* Subtle neon glow arc */}
+          <div 
+            className="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-24 rounded-full blur-2xl opacity-40 pointer-events-none"
+            style={{ backgroundColor: currentMeta.accentHex }}
+          />
 
-          {/* Forearm (Bottom/Hand portion) */}
-          <div className="absolute top-1/2 -translate-y-1/2 right-0 w-28 sm:w-36 h-48 sm:h-56 bg-gradient-to-l from-[#E2D2C3] via-[#E8D9CB] to-[#DFCBB9] rounded-r-[4rem] shadow-inner opacity-90 -z-10" />
-
-          {/* Wearable Silicone Strap (Matte Ceramic White) */}
-          <div className="relative z-10 flex items-center justify-center w-full">
-            {/* Left Strap */}
-            <div className="w-16 sm:w-24 h-28 sm:h-32 bg-gradient-to-r from-[#F0EFEA] to-[#FAFAF8] rounded-l-3xl border-y-2 border-l-2 border-[#D6D4CE] shadow-[0_10px_25px_-5px_rgba(0,0,0,0.15)]" />
-
-            {/* Smart Capsule Watch Screen Body */}
-            <div
-              className={`relative z-20 w-64 sm:w-72 md:w-80 h-44 sm:h-48 rounded-[2.8rem] bg-[#121316] p-4 sm:p-5 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.4),0_0_0_3px_#E2E0D8,0_0_0_6px_#C8C6BD] border border-white/20 flex flex-col justify-between transition-all duration-300 ${
-                isPulseVibrating ? 'scale-105 ring-8 ring-rose-400/60' : ''
-              } ${isMeasuringBiometrics ? 'ring-4 ring-emerald-400' : ''}`}
-            >
-              {/* Glass Reflection Arc */}
-              <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-white/15 to-transparent rounded-t-[2.8rem] pointer-events-none" />
-
-              {/* Status Header on OLED */}
-              <div className="flex items-center justify-between text-[11px] font-mono text-gray-400">
-                <span className="flex items-center gap-1.5 text-emerald-400">
-                  <Radio className="w-3 h-3 animate-pulse" />
-                  <span>BLE 5.3</span>
-                </span>
-                <span className="text-gray-300 font-semibold tracking-wider">11:04 AM</span>
-                <span className="text-gray-300">{devices.band.battery}%</span>
+          {/* Central Heartbeat & BPM Monitor */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="relative flex items-center justify-center">
+                <Heart
+                  className="w-14 h-14 text-[#FF80B5] fill-[#FF80B5] animate-pulse drop-shadow-[0_0_15px_#FF80B5]"
+                  style={{ animationDuration: `${Math.max(500, 60000 / bandBiometrics.bpm)}ms` }}
+                />
               </div>
-
-              {/* Central Biometric Readout */}
-              <div className="flex items-center justify-between my-auto px-1">
-                {/* BPM & Pulse */}
-                <div className="flex items-center gap-3">
-                  <Heart
-                    className={`w-8 h-8 text-rose-500 fill-rose-500 ${
-                      isMeasuringBiometrics ? 'animate-bounce' : 'animate-pulse'
-                    }`}
-                    style={{ animationDuration: `${Math.max(500, 60000 / bandBiometrics.bpm)}ms` }}
-                  />
-                  <div>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-3xl sm:text-4xl font-extrabold font-mono text-white tracking-tight">
-                        {isMeasuringBiometrics ? '---' : bandBiometrics.bpm}
-                      </span>
-                      <span className="text-xs font-semibold text-gray-400">BPM</span>
-                    </div>
-                    <span className="text-[10px] text-gray-400 block -mt-1">Ritmo cardíaco</span>
-                  </div>
-                </div>
-
-                {/* Stress & Mood indicator */}
-                <div className="text-right">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-gray-400">
-                    Estrés
+              <div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-5xl sm:text-6xl font-black font-mono tracking-tight text-white">
+                    {isMeasuringBiometrics ? '---' : bandBiometrics.bpm}
                   </span>
-                  <div
-                    className={`text-xs font-bold font-mono px-2.5 py-0.5 rounded-full inline-block mt-0.5 ${
-                      bandBiometrics.stressLevel === 'Alto'
-                        ? 'bg-rose-950 text-rose-400 border border-rose-800'
-                        : bandBiometrics.stressLevel === 'Medio'
-                        ? 'bg-amber-950 text-amber-400 border border-amber-800'
-                        : 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                    }`}
-                  >
-                    {isMeasuringBiometrics ? 'Escaneando...' : bandBiometrics.stressLevel}
-                  </div>
-                  <div className="text-[11px] text-[#A3E8FF] capitalize font-medium mt-1">
-                    {currentEmotion}
-                  </div>
+                  <span className="text-sm font-bold text-gray-400">BPM</span>
                 </div>
-              </div>
-
-              {/* Dynamic Animated Pulse Waveform */}
-              <div className="w-full h-4 overflow-hidden relative">
-                <svg className="w-full h-full text-emerald-400 opacity-90" viewBox="0 0 120 20">
-                  <path
-                    d="M 0 10 L 25 10 L 30 2 L 35 18 L 40 10 L 60 10 L 65 3 L 70 17 L 75 10 L 120 10"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                <span className="text-xs text-gray-400 font-medium block">
+                  Ritmo cardíaco continuo
+                </span>
               </div>
             </div>
 
-            {/* Right Strap with Clasp Detail */}
-            <div className="w-16 sm:w-24 h-28 sm:h-32 bg-gradient-to-l from-[#F0EFEA] to-[#FAFAF8] rounded-r-3xl border-y-2 border-r-2 border-[#D6D4CE] shadow-[0_10px_25px_-5px_rgba(0,0,0,0.15)] flex items-center justify-end pr-3">
-              <div className="w-2.5 h-10 bg-[#D6D4CE] rounded-full" />
+            {/* Stress Level & Emotional Sync Indicator */}
+            <div className="text-center sm:text-right space-y-1">
+              <span className="text-[10px] font-mono uppercase tracking-widest text-gray-400 block">
+                Nivel de Estrés
+              </span>
+              <div
+                className="text-sm font-black font-mono px-3 py-1 rounded-full inline-block border"
+                style={{
+                  backgroundColor: `${currentMeta.accentHex}25`,
+                  borderColor: currentMeta.accentHex,
+                  color: currentMeta.accentHex,
+                }}
+              >
+                {isMeasuringBiometrics ? 'Escaneando...' : bandBiometrics.stressLevel}
+              </div>
+              <div className="text-xs text-gray-300 font-bold capitalize flex items-center justify-center sm:justify-end gap-1 pt-1">
+                <span>{currentMeta.emoji}</span>
+                <span>{currentMeta.label}</span>
+              </div>
             </div>
+          </div>
+
+          {/* Dynamic Real-time Animated ECG Waveform */}
+          <div className="w-full h-12 bg-black/40 rounded-2xl p-2 border border-white/10 overflow-hidden relative flex items-center">
+            <svg className="w-full h-full" viewBox="0 0 160 30" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="fullscreenEcgGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#72D6B1" />
+                  <stop offset="50%" stopColor="#79B9F2" />
+                  <stop offset="100%" stopColor="#FF80B5" />
+                </linearGradient>
+              </defs>
+              <path
+                d="M 0 15 L 30 15 L 35 3 L 40 27 L 45 15 L 75 15 L 80 4 L 85 26 L 90 15 L 120 15 L 125 3 L 130 27 L 135 15 L 160 15"
+                fill="none"
+                stroke="url(#fullscreenEcgGrad)"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="animate-pulse"
+              />
+            </svg>
+          </div>
+
+          {/* Active Support Message */}
+          <div className="p-3 bg-white/5 rounded-2xl border border-white/10 text-xs text-gray-300 italic font-medium leading-relaxed">
+            "{currentMeta.supportMessage}"
           </div>
         </div>
 
         {/* Demo Disclaimer */}
-        <div className="mt-6 flex items-center gap-1.5 text-xs text-[#50545E] bg-white/70 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-black/5">
-          <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-          <span>Datos demostrativos de laboratorio · Sensor háptico simulado</span>
+        <div className="flex items-center gap-2 text-xs text-[#FFD65A] bg-[#FFD65A]/15 px-4 py-2 rounded-2xl border border-[#FFD65A]/30">
+          <AlertTriangle className="w-4 h-4 shrink-0" />
+          <span>Datos biométricos y hápticos demostrativos simulados para prototipado UX.</span>
         </div>
       </div>
 
-      {/* Bottom Floating Interaction Area */}
-      <div className="relative z-20 max-w-lg w-full mx-auto space-y-2">
-        <div className="bg-white/90 backdrop-blur-lg rounded-3xl p-3 border border-white/80 shadow-lg space-y-2.5">
+      {/* Bottom Interactive Controls Panel */}
+      <div className="relative z-20 max-w-lg w-full mx-auto space-y-3 shrink-0">
+        <div className="bg-[#1A1C22] rounded-3xl p-4 border border-white/15 shadow-xl space-y-3">
           {/* Main Action Buttons */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            {/* 1. Medir estado emocional */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {/* 1. Pulso de apoyo */}
             <button
-              onClick={measureBiometrics}
-              disabled={isMeasuringBiometrics}
-              className="flex items-center justify-center gap-1.5 py-3 px-3 rounded-2xl bg-[#292A30] hover:bg-black text-white text-xs font-semibold shadow-xs transition-all active:scale-95 disabled:opacity-50"
-            >
-              <RotateCw className={`w-3.5 h-3.5 ${isMeasuringBiometrics ? 'animate-spin' : ''}`} />
-              <span>{isMeasuringBiometrics ? 'Midiendo...' : 'Medir estado'}</span>
-            </button>
-
-            {/* 2. Pulso de apoyo */}
-            <button
-              onClick={() => sendSupportPulse(targetFriendName)}
+              onClick={handlePulse}
               disabled={isPulseVibrating}
-              className="flex items-center justify-center gap-1.5 py-3 px-3 rounded-2xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white text-xs font-semibold shadow-xs transition-all active:scale-95 disabled:opacity-50"
+              className="flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#FF936F] via-[#FF80B5] to-[#B69AF5] hover:scale-102 active:scale-95 text-white text-xs font-black shadow-[0_4px_16px_rgba(255,128,181,0.4)] transition-all disabled:opacity-50"
             >
-              <Heart className={`w-3.5 h-3.5 fill-white ${isPulseVibrating ? 'animate-bounce' : ''}`} />
-              <span>Pulso de apoyo</span>
+              <Heart className={`w-4 h-4 fill-white ${isPulseVibrating ? 'animate-bounce' : ''}`} />
+              <span>ENVIAR PULSO DE APOYO</span>
             </button>
 
-            {/* 3. Cambiar emoción */}
+            {/* 2. Medir estado emocional */}
             <button
-              onClick={() => setShowEmotionPicker(true)}
-              className="flex items-center justify-center gap-1.5 py-3 px-3 rounded-2xl bg-[#F8F7F4] hover:bg-[#DCD5F5]/60 text-[#292A30] text-xs font-semibold transition-all active:scale-95 border border-[#ECEDEF]"
+              onClick={handleMeasure}
+              disabled={isMeasuringBiometrics}
+              className="flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-black transition-all border border-white/20 disabled:opacity-50"
             >
-              <Sparkles className="w-3.5 h-3.5 text-[#4F4275]" />
-              <span>Cambiar emoción</span>
+              <RotateCw className={`w-4 h-4 ${isMeasuringBiometrics ? 'animate-spin text-[#72D6B1]' : ''}`} />
+              <span>{isMeasuringBiometrics ? 'Midiendo biometría...' : 'Medir estado psicofisiológico'}</span>
             </button>
           </div>
 
           {/* Quick Friend Selector for Support Pulse */}
-          <div className="flex items-center justify-between text-xs px-2 pt-1 border-t border-black/5 text-[#50545E]">
-            <span>Destinatario del pulso:</span>
-            <div className="flex items-center gap-1">
+          <div className="flex items-center justify-between text-xs px-1 pt-1 border-t border-white/10 text-gray-400 flex-wrap gap-2">
+            <span className="font-bold">Enviar pulso a:</span>
+            <div className="flex items-center gap-1.5 flex-wrap">
               {friends.map((f) => (
                 <button
                   key={f.id}
                   onClick={() => setTargetFriendName(f.name)}
-                  className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold transition-all ${
+                  className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
                     targetFriendName === f.name
-                      ? 'bg-[#292A30] text-white'
-                      : 'bg-[#F8F7F4] text-[#50545E] hover:bg-[#ECEDEF]'
+                      ? 'bg-gradient-to-r from-[#FFD65A] to-[#FF936F] text-[#28243A] shadow-xs scale-105'
+                      : 'bg-white/10 text-gray-300 hover:bg-white/20'
                   }`}
                 >
                   {f.name}
@@ -237,36 +235,36 @@ export const FullscreenBand: React.FC = () => {
         </div>
 
         {/* Return Button */}
-        <div className="flex justify-center">
+        <div className="flex justify-center pb-2">
           <button
             onClick={() => {
               exitFullscreenDevice();
               setActiveTab('emotiapp');
             }}
-            className="flex items-center gap-1 text-xs text-[#50545E] hover:text-[#292A30] font-medium py-1 transition-colors"
+            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white font-bold py-1 transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Volver a EmotiApp</span>
+            <span>Volver a la vista principal de EMOTI</span>
           </button>
         </div>
       </div>
 
-      {/* Emotion Selector Bottom Sheet */}
+      {/* Emotion Selector Modal */}
       {showEmotionPicker && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl border border-[#ECEDEF] space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-[#ECEDEF]">
+        <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-[#1A1C22] text-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl border-2 border-white/20 space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-white/10">
               <div>
-                <h3 className="font-bold text-base text-[#292A30]">
-                  Seleccionar emoción para Emoti-Band
+                <h3 className="font-black text-base text-white">
+                  Sintonizar emoción para Emoti-Band
                 </h3>
-                <p className="text-xs text-[#50545E]">
+                <p className="text-xs text-gray-400 font-medium">
                   Ajusta los parámetros psicofisiológicos simulados.
                 </p>
               </div>
               <button
                 onClick={() => setShowEmotionPicker(false)}
-                className="p-1.5 rounded-lg text-[#50545E] hover:bg-[#ECEDEF]"
+                className="p-1.5 rounded-xl text-gray-400 hover:bg-white/10"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -283,20 +281,17 @@ export const FullscreenBand: React.FC = () => {
                     onClick={() => {
                       setEmotion(emoKey);
                       setShowEmotionPicker(false);
+                      triggerSparkBurst();
                     }}
-                    className={`p-3 rounded-2xl border text-left transition-all ${
+                    className={`p-3 rounded-2xl border-2 text-left transition-all ${
                       isSelected
-                        ? 'bg-[#292A30] text-white border-[#292A30] shadow-sm'
-                        : `${config.colorBg} border-transparent hover:border-black/10 text-[#292A30]`
+                        ? 'bg-white/20 border-white text-white shadow-sm scale-102'
+                        : 'bg-white/5 border-white/10 hover:border-white/30 text-gray-300'
                     }`}
                   >
                     <div className="text-2xl mb-1">{config.emoji}</div>
-                    <div className="font-bold text-xs capitalize">{config.label}</div>
-                    <div
-                      className={`text-[10px] mt-0.5 ${
-                        isSelected ? 'text-white/80' : 'text-[#50545E]'
-                      }`}
-                    >
+                    <div className="font-black text-xs capitalize">{config.label}</div>
+                    <div className="text-[10px] mt-0.5 text-gray-400 font-mono">
                       Estrés {config.suggestedStress}
                     </div>
                   </button>

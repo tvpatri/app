@@ -30,8 +30,8 @@ export const BottomNavigation: React.FC = () => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#FFF9F0]/95 backdrop-blur-md border-t-2 border-[#FFD65A]/40 px-3 py-2.5 shadow-[0_-8px_25px_-5px_rgba(40,36,58,0.08)]">
-      <div className="max-w-md mx-auto flex items-center justify-around">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#FFF9F0]/95 backdrop-blur-md border-t-2 border-[#FFD65A]/40 px-3 pt-2 pb-[max(env(safe-area-inset-bottom),0.75rem)] shadow-[0_-8px_25px_-5px_rgba(40,36,58,0.1)]">
+      <div className="w-full flex items-center justify-around">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
